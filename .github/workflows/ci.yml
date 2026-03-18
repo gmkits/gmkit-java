@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (JDK ${{ matrix.java }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        java: [ "8", "11", "17" , "21", "25" ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+          cache: maven
+          cache-dependency-path: |
+            pom.xml
+            gmkit/pom.xml
+
+      - name: Run tests
+        run: mvn -B -ntp clean test
+
+  verify:
+    name: Verify (JDK 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+          cache-dependency-path: |
+            pom.xml
+            gmkit/pom.xml
+
+      - name: Run verify
+        run: mvn -B -ntp -DskipTests verify

@@ -1,0 +1,50 @@
+package cn.gmkit.sm4;
+
+import cn.gmkit.core.GmSecurityContext;
+import cn.gmkit.core.GmSecurityContexts;
+import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.SM4CipherMode;
+
+final class SM4Support {
+
+    static final String ALGORITHM = "SM4";
+    static final int BLOCK_SIZE = 16;
+    static final int DEFAULT_KEY_SIZE = 128;
+    private static final SM4Options DEFAULT_OPTIONS = SM4Options.builder().build();
+
+    private SM4Support() {
+    }
+
+    static GmSecurityContext context(GmSecurityContext securityContext) {
+        return securityContext != null ? securityContext : GmSecurityContexts.defaults();
+    }
+
+    static SM4Options options(SM4Options options) {
+        return options != null ? options : DEFAULT_OPTIONS;
+    }
+
+    static int resolveTagLength(SM4CipherMode mode, Integer configuredTagLength) {
+        if (mode == SM4CipherMode.GCM) {
+            int resolved = configuredTagLength != null ? configuredTagLength.intValue() : 16;
+            if (resolved < 12 || resolved > 16) {
+                throw new GmkitException("Invalid SM4 GCM tag length: expected 12 to 16 bytes");
+            }
+            return resolved;
+        }
+        if (mode == SM4CipherMode.CCM) {
+            int resolved = configuredTagLength != null ? configuredTagLength.intValue() : 16;
+            if (resolved < 4 || resolved > 16 || (resolved & 1) != 0) {
+                throw new GmkitException("Invalid SM4 CCM tag length: expected an even value between 4 and 16 bytes");
+            }
+            return resolved;
+        }
+        return 0;
+    }
+
+    static void requireBlockMultiple(int length, String label) {
+        if (length % BLOCK_SIZE != 0) {
+            throw new GmkitException(label + " length must be a multiple of 16 bytes");
+        }
+    }
+}
+

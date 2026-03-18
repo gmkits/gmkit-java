@@ -1,147 +1,131 @@
-# GMKit - 国密算法Java实现库
+# GMKit - 国密算法 Java 工具库
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue.svg)](LICENSE)
 [![JDK](https://img.shields.io/badge/JDK-1.8+-green.svg)](https://www.oracle.com/java/technologies/javase-downloads.html)
 
-GMKit 是一个高性能、易用的国密算法Java实现库，基于 BouncyCastle 提供 SM2、SM3、SM4 等国密算法的完整支持。
+GMKit 是一个基于 BouncyCastle 的国密算法工具库，当前提供 SM2、SM3、SM4 的静态工具 API，兼容 JDK 8+。
 
-## ✨ 特性
+## 特性
 
-- 🚀 **高性能** - 基于 BouncyCastle 优化实现，性能优异
-- 🎯 **易用性** - 简洁的 API 设计，支持链式调用
-- 🔒 **安全性** - 完整实现国密标准，通过安全审计
-- 🧩 **模块化** - 独立模块设计，按需引入
-- 📚 **完整文档** - 详细的 Javadoc 和使用示例
-- ✅ **充分测试** - 完善的单元测试覆盖
+- 单一运行时 artifact，接入和发布更简单
+- 一个算法一个主工具类，避免门面类和轻量 options 过度堆叠
+- 保留 `SM2Util`、`SM3Util`、`SM4Util` 兼容入口，便于平滑迁移
+- 内部按职责拆分实现，外部 API 保持直接、清晰
+- 内置测试覆盖 SM2/SM3/SM4 常见路径和兼容别名
 
-## 🎯 支持的算法
+## 支持算法
 
-| 算法      | 说明         | 模块          |
-|---------|------------|-------------|
-| **SM2** | 椭圆曲线公钥密码算法 | `gmkit-sm2` |
-| **SM3** | 密码杂凑算法     | `gmkit-sm3` |
-| **SM4** | 分组密码算法     | `gmkit-sm4` |
+| 算法  | 说明         | 主入口                |
+|-----|------------|--------------------|
+| SM2 | 椭圆曲线公钥密码算法 | `cn.gmkit.sm2.SM2` |
+| SM3 | 密码杂凑算法     | `cn.gmkit.sm3.SM3` |
+| SM4 | 分组密码算法     | `cn.gmkit.sm4.SM4` |
 
-## 📦 快速开始
-
-### Maven 引入
+## Maven 引入
 
 ```xml
 <dependency>
     <groupId>cn.gmkit</groupId>
-    <artifactId>gmkit-sm2</artifactId>
-    <version>0.9.4-SNAPSHOT</version>
-</dependency>
-
-<dependency>
-    <groupId>cn.gmkit</groupId>
-    <artifactId>gmkit-sm3</artifactId>
-    <version>0.9.4-SNAPSHOT</version>
-</dependency>
-
-<dependency>
-    <groupId>cn.gmkit</groupId>
-    <artifactId>gmkit-sm4</artifactId>
+    <artifactId>gmkit</artifactId>
     <version>0.9.4-SNAPSHOT</version>
 </dependency>
 ```
 
-### SM2 使用示例
+## 快速开始
+
+### SM2
 
 ```java
-import cn.gmkit.sm2.Sm2;
+import cn.gmkit.core.SM2CipherMode;
+import cn.gmkit.core.SM2SignatureFormat;
+import cn.gmkit.sm2.SM2;
+import cn.gmkit.sm2.SM2KeyPair;
+import cn.gmkit.sm2.SM2SignOptions;
 
-// 生成密钥对
-Sm2 sm2 = Sm2.generate();
+import java.nio.charset.StandardCharsets;
 
-// 加密
-String plaintext = "Hello GMKit!";
-String ciphertext = sm2.encrypt(plaintext);
+SM2KeyPair keyPair = SM2.generateKeyPair(false);
+byte[] plaintext = "Hello GMKit!".getBytes(StandardCharsets.UTF_8);
 
-// 解密
-String decrypted = sm2.decrypt(ciphertext);
+byte[] ciphertext = SM2.encrypt(keyPair.publicKey(), plaintext, SM2CipherMode.C1C3C2);
+byte[] decrypted = SM2.decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2);
 
-// 签名
-String signature = sm2.sign(plaintext);
-
-// 验签
-boolean valid = sm2.verify(plaintext, signature);
+byte[] signature = SM2.sign(
+    keyPair.privateKey(),
+    plaintext,
+    SM2SignOptions.builder()
+        .signatureFormat(SM2SignatureFormat.RAW)
+        .build());
+boolean valid = SM2.verify(keyPair.publicKey(), plaintext, signature);
 ```
 
-### SM3 使用示例
+### SM3
 
 ```java
-import cn.gmkit.sm3.Sm3Util;
+import cn.gmkit.sm3.SM3;
 
-// 计算摘要
-String hash = Sm3Util.digestHex("Hello GMKit!");
+import java.nio.charset.StandardCharsets;
 
-// HMAC
-byte[] key = new byte[32];
-String hmac = Sm3Util.hmacHex(key, "Hello GMKit!");
+String hash = SM3.digestHex("Hello GMKit!");
+String hmac = SM3.hmacHex("secret".getBytes(StandardCharsets.UTF_8), "Hello GMKit!");
 ```
 
-### SM4 使用示例
+### SM4
 
 ```java
-import cn.gmkit.sm4.Sm4;
-import cn.gmkit.sm4.Sm4Options;
-import cn.gmkit.core.Sm4CipherMode;
+import cn.gmkit.core.SM4CipherMode;
+import cn.gmkit.core.SM4Padding;
+import cn.gmkit.sm4.SM4;
+import cn.gmkit.sm4.SM4CipherResult;
+import cn.gmkit.sm4.SM4Options;
 
-// 生成密钥
-Sm4 sm4 = new Sm4();
+import java.nio.charset.StandardCharsets;
 
-// ECB模式加密
-String ciphertext = sm4.encrypt("Hello GMKit!");
+byte[] key = SM4.generateKey();
+byte[] iv = new byte[16];
 
-// CBC模式加密
-Sm4Options options = Sm4Options.builder()
-    .mode(Sm4CipherMode.CBC)
+SM4Options options = SM4Options.builder()
+    .mode(SM4CipherMode.CBC)
+    .padding(SM4Padding.PKCS7)
+    .iv(iv)
     .build();
-String encrypted = sm4.encrypt("Hello GMKit!", options);
+
+SM4CipherResult encrypted = SM4.encrypt(key, "Hello GMKit!".getBytes(StandardCharsets.UTF_8), options);
+String decrypted = SM4.decryptToUtf8(key, encrypted, options);
 ```
 
-## 🏗️ 模块结构
+## 迁移说明
 
-```
+- 新主入口为 `SM2`、`SM3`、`SM4` 静态工具类。
+- `SM2Util`、`SM3Util`、`SM4Util` 仍保留，但已标记为 `@Deprecated`。
+- `SM2EncryptOptions`、`SM2DecryptOptions`、`SM4DecryptOptions` 已移除：
+    - SM2 加解密改为默认重载或直接传 `SM2CipherMode`
+    - SM4 解密和加密统一使用 `SM4Options`，AEAD tag 通过 `tag(...)` 传入
+- 对象式 API（如 `new SM3(...)`、`new SM4(...)`、`SM2.generate()`）已不再作为主设计保留；当前对外统一使用大写缩写命名的 `SM*` 入口。
+
+## 仓库结构
+
+```text
 gmkit-java/
-├── gmkit-core/          # 核心模块 - 通用工具类和枚举
-├── gmkit-sm2/           # SM2算法实现
-├── gmkit-sm3/           # SM3算法实现
-├── gmkit-sm4/           # SM4算法实现
-└── gmkit-bom/           # 依赖管理BOM
+├── gmkit/               # 单一运行时模块
+│   └── src/
+├── docs/
+├── pom.xml              # 父工程
+└── README.md
 ```
 
-## 🔧 构建项目
+## 构建
 
 ```bash
-# 克隆项目
-git clone https://github.com/yourusername/gmkit-java.git
-cd gmkit-java
-
-# 编译
-mvn clean compile
-
-# 测试
-mvn test
-
-# 打包
-mvn package
+mvn clean test
+mvn -DskipTests verify
 ```
 
-## 📄 许可证
+## GitHub Actions
+
+仓库已提供 CI、Release Verify、GitHub Packages 发布和 Maven Central 发布工作流，使用方法见 [docs/github-actions.md](docs/github-actions.md)。
+
+## 许可证
 
 本项目采用 [Apache License 2.0](LICENSE) 开源协议。
 
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-## 📧 联系方式
-
-- 官网: https://gmkit.cn
-- 邮箱: support@gmkit.cn
-
----
-
-**GMKit** - 让国密算法更简单 🚀

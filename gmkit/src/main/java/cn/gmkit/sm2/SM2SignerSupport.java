@@ -1,0 +1,104 @@
+package cn.gmkit.sm2;
+
+import cn.gmkit.core.*;
+import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.ec.ECPoint;
+
+import java.security.MessageDigest;
+
+final class SM2SignerSupport {
+
+    private SM2SignerSupport() {
+    }
+
+    static byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        SM2SignOptions resolved = options != null ? options : SM2SignOptions.builder().build();
+        String publicKeyHex = SM2KeyOps.getPublicKeyFromPrivateKey(privateKeyHex, false);
+        byte[] eHash = computeE(publicKeyHex, message, resolved.userId(), resolved.skipZComputation());
+        return signDigest(privateKeyHex, eHash, resolved.signatureFormat(), resolved.securityContext());
+    }
+
+    static String signHex(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return HexCodec.encode(sign(privateKeyHex, message, options));
+    }
+
+    static String signBase64(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return Base64Codec.encode(sign(privateKeyHex, message, options));
+    }
+
+    static byte[] signDigest(
+        String privateKeyHex,
+        byte[] eHash,
+        SM2SignatureFormat signatureFormat,
+        GmSecurityContext securityContext) {
+        ECPrivateKeyParameters privateKey = SM2KeyOps.toPrivateKeyParameters(privateKeyHex);
+        SM2DigestSigner signer = new SM2DigestSigner();
+        signer.init(true, new ParametersWithRandom(privateKey, SM2Domain.context(securityContext).secureRandom()));
+        try {
+            byte[] der = signer.generateSignature(eHash);
+            SM2SignatureFormat resolvedFormat = signatureFormat != null ? signatureFormat : SM2SignatureFormat.RAW;
+            return resolvedFormat == SM2SignatureFormat.DER ? der : SM2Signatures.derToRaw(der);
+        } catch (CryptoException ex) {
+            throw new GmkitException("SM2 signing failed", ex);
+        }
+    }
+
+    static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
+        SM2VerifyOptions resolved = options != null ? options : SM2VerifyOptions.builder().build();
+        try {
+            byte[] derSignature = SM2Signatures.normalizeToDer(signature, resolved.signatureFormat());
+            byte[] eHash = computeE(publicKeyHex, message, resolved.userId(), resolved.skipZComputation());
+            return verifyDigest(publicKeyHex, eHash, derSignature);
+        } catch (RuntimeException ex) {
+            return false;
+        }
+    }
+
+    static boolean verify(String publicKeyHex, byte[] message, String signature, SM2VerifyOptions options) {
+        byte[] signatureBytes = ByteEncodings.decodeAuto(signature, "signature");
+        return verify(publicKeyHex, message, signatureBytes, options);
+    }
+
+    static boolean verifyDigest(String publicKeyHex, byte[] eHash, byte[] derSignature) {
+        ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
+        SM2DigestSigner signer = new SM2DigestSigner();
+        signer.init(false, publicKey);
+        return signer.verifySignature(eHash, derSignature);
+    }
+
+    static byte[] computeZ(String userId, String publicKeyHex) {
+        byte[] userIdBytes = SM2Domain.userIdBytes(userId);
+        byte[] entl = SM2Domain.userIdBitLength(userIdBytes);
+        ECPoint publicPoint = SM2KeyOps.toPublicKeyPoint(publicKeyHex).normalize();
+        byte[] px = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
+            SM2Domain.CURVE_LENGTH,
+            publicPoint.getAffineXCoord().toBigInteger());
+        byte[] py = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
+            SM2Domain.CURVE_LENGTH,
+            publicPoint.getAffineYCoord().toBigInteger());
+        return cn.gmkit.sm3.SM3.digest(
+            Bytes.concat(entl, userIdBytes, SM2Domain.CURVE_A, SM2Domain.CURVE_B, SM2Domain.CURVE_GX, SM2Domain.CURVE_GY, px, py));
+    }
+
+    static byte[] computeE(String publicKeyHex, byte[] message, String userId, boolean skipZComputation) {
+        if (skipZComputation) {
+            return computeEWithoutZ(message);
+        }
+        return cn.gmkit.sm3.SM3.digest(Bytes.concat(computeZ(userId, publicKeyHex), message));
+    }
+
+    static byte[] computeEWithoutZ(byte[] message) {
+        return cn.gmkit.sm3.SM3.digest(message);
+    }
+
+    static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
+        if (expectedS2 == null || confirmationTag == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(Bytes.clone(expectedS2), Bytes.clone(confirmationTag));
+    }
+}
+
