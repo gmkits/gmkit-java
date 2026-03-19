@@ -23,6 +23,21 @@ public final class Bytes {
     }
 
     /**
+     * 验证字节数组不为null
+     *
+     * @param input 待验证的字节数组
+     * @param label 错误提示标签
+     * @return 输入的字节数组
+     * @throws GmkitException 如果字节数组为null
+     */
+    public static byte[] requireNonNull(byte[] input, String label) {
+        if (input == null) {
+            throw new GmkitException(label + " must not be null");
+        }
+        return input;
+    }
+
+    /**
      * 验证字节数组长度是否符合要求
      *
      * @param input          待验证的字节数组
@@ -32,11 +47,9 @@ public final class Bytes {
      * @throws GmkitException 如果字节数组为null或长度不符合要求
      */
     public static byte[] requireLength(byte[] input, int expectedLength, String label) {
-        if (input == null) {
-            throw new GmkitException(label + " must not be null");
-        }
+        requireNonNull(input, label);
         if (input.length != expectedLength) {
-            throw new GmkitException(label + " must be " + expectedLength + " bytes");
+            throw new GmkitException(label + " must be " + expectedLength + " bytes, but was " + input.length);
         }
         return input;
     }
@@ -96,5 +109,4 @@ public final class Bytes {
         return Arrays.copyOfRange(input, from, to);
     }
 }
-
 

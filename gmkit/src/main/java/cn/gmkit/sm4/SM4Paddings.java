@@ -10,7 +10,7 @@ final class SM4Paddings {
     }
 
     static byte[] apply(byte[] data, SM4CipherMode mode, SM4Padding padding) {
-        byte[] source = Bytes.clone(data);
+        byte[] source = Bytes.requireNonNull(data, "Plaintext");
         if (mode.isStreamLike()) {
             return source;
         }

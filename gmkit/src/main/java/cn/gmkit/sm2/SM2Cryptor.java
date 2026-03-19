@@ -1,6 +1,12 @@
 package cn.gmkit.sm2;
 
-import cn.gmkit.core.*;
+import cn.gmkit.core.Base64Codec;
+import cn.gmkit.core.ByteEncodings;
+import cn.gmkit.core.Bytes;
+import cn.gmkit.core.GmSecurityContext;
+import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.HexCodec;
+import cn.gmkit.core.SM2CipherMode;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.SM2Engine;
@@ -17,11 +23,12 @@ final class SM2Cryptor {
         ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
         SM2Engine engine = new SM2Engine(SM2Domain.cipherMode(mode).toBcMode());
         CipherParameters parameters = new ParametersWithRandom(publicKey, SM2Domain.context(securityContext).secureRandom());
+        byte[] safeData = Bytes.requireNonNull(data, "SM2 plaintext");
         try {
             engine.init(true, parameters);
-            return engine.processBlock(data, 0, data.length);
+            return engine.processBlock(safeData, 0, safeData.length);
         } catch (InvalidCipherTextException ex) {
-            throw new GmkitException("SM2 encryption failed", ex);
+            throw new GmkitException("SM2 encryption failed: please verify the public key, plaintext and Provider configuration", ex);
         }
     }
 
@@ -35,7 +42,7 @@ final class SM2Cryptor {
 
     static byte[] decrypt(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
         ECPrivateKeyParameters privateKey = SM2KeyOps.toPrivateKeyParameters(privateKeyHex);
-        byte[] normalizedCiphertext = SM2Ciphertexts.decodeAuto(ciphertext, mode);
+        byte[] normalizedCiphertext = SM2Ciphertexts.normalizeForDecrypt(ciphertext, mode);
         SM2Engine engine = new SM2Engine(SM2Domain.cipherMode(mode).toBcMode());
         try {
             engine.init(false, privateKey);
@@ -49,4 +56,3 @@ final class SM2Cryptor {
         return decrypt(privateKeyHex, ByteEncodings.decodeAuto(ciphertext, "ciphertext"), mode);
     }
 }
-

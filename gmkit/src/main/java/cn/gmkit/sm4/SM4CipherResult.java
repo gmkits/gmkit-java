@@ -34,6 +34,10 @@ public final class SM4CipherResult {
         return Bytes.clone(ciphertext);
     }
 
+    byte[] ciphertextUnsafe() {
+        return ciphertext;
+    }
+
     /**
      * 获取认证标签
      *
@@ -41,6 +45,10 @@ public final class SM4CipherResult {
      */
     public byte[] tag() {
         return Bytes.clone(tag);
+    }
+
+    byte[] tagUnsafe() {
+        return tag;
     }
 
     /**

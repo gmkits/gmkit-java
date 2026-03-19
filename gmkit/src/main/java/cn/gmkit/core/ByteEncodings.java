@@ -61,7 +61,10 @@ public final class ByteEncodings {
         if (trimmed == null) {
             throw new GmkitException("Invalid " + label + ": input must not be null");
         }
-        String normalizedHex = HexCodec.normalize(trimmed);
+        if (trimmed.isEmpty()) {
+            throw new GmkitException("Invalid " + label + ": input must not be blank");
+        }
+        String normalizedHex = HexCodec.normalize(trimmed, label);
         if ((normalizedHex.length() & 1) == 0 && HexCodec.isHex(normalizedHex)) {
             return HexCodec.decodeStrict(normalizedHex, label);
         }
@@ -72,4 +75,3 @@ public final class ByteEncodings {
         }
     }
 }
-

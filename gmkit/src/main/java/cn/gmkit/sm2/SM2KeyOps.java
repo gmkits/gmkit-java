@@ -33,10 +33,7 @@ final class SM2KeyOps {
 
     static String getPublicKeyFromPrivateKey(String privateKeyHex, boolean compressed) {
         ECPrivateKeyParameters privateKey = toPrivateKeyParameters(privateKeyHex);
-        ECPoint publicPoint = new FixedPointCombMultiplier()
-            .multiply(SM2Domain.DOMAIN_PARAMS.getG(), privateKey.getD())
-            .normalize();
-        return encodePublicKey(publicPoint, compressed);
+        return encodePublicKey(derivePublicPoint(privateKey), compressed);
     }
 
     static String compressPublicKey(String publicKeyHex) {
@@ -61,6 +58,16 @@ final class SM2KeyOps {
         return new ECPublicKeyParameters(point, SM2Domain.DOMAIN_PARAMS);
     }
 
+    static ECPublicKeyParameters toPublicKeyParameters(ECPoint publicPoint) {
+        return new ECPublicKeyParameters(publicPoint.normalize(), SM2Domain.DOMAIN_PARAMS);
+    }
+
+    static ECPoint derivePublicPoint(ECPrivateKeyParameters privateKey) {
+        return new FixedPointCombMultiplier()
+            .multiply(SM2Domain.DOMAIN_PARAMS.getG(), privateKey.getD())
+            .normalize();
+    }
+
     static ECPoint toPublicKeyPoint(String publicKeyHex) {
         String normalized = normalizePublicKeyHex(publicKeyHex);
         byte[] encoded = HexCodec.decodeStrict(normalized, "public key");
@@ -72,7 +79,7 @@ final class SM2KeyOps {
     }
 
     private static byte[] decodePrivateKey(String privateKeyHex) {
-        String normalized = HexCodec.normalize(privateKeyHex);
+        String normalized = HexCodec.normalize(privateKeyHex, "private key");
         if (normalized.isEmpty() || !HexCodec.isHex(normalized)) {
             throw new GmkitException("Invalid private key: must be a hexadecimal string");
         }
@@ -98,7 +105,7 @@ final class SM2KeyOps {
     }
 
     private static String normalizePublicKeyHex(String publicKeyHex) {
-        String normalized = HexCodec.normalize(publicKeyHex);
+        String normalized = HexCodec.normalize(publicKeyHex, "public key");
         if (normalized.isEmpty() || !HexCodec.isHex(normalized)) {
             throw new GmkitException("Invalid public key: must be hexadecimal");
         }

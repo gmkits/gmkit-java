@@ -21,7 +21,7 @@ public final class HexCodec {
      * @throws GmkitException 如果输入不是有效的十六进制字符串
      */
     public static byte[] decodeStrict(String input, String label) {
-        String normalized = normalize(input);
+        String normalized = normalize(input, label);
         if ((normalized.length() & 1) != 0) {
             throw new GmkitException("Invalid " + label + ": hexadecimal strings must have an even length");
         }
@@ -38,7 +38,7 @@ public final class HexCodec {
      * @return 十六进制字符串
      */
     public static String encode(byte[] input) {
-        return Hex.toHexString(input);
+        return Hex.toHexString(Bytes.requireNonNull(input, "Hex input"));
     }
 
     /**
@@ -71,8 +71,19 @@ public final class HexCodec {
      * @throws GmkitException 如果输入为null
      */
     public static String normalize(String input) {
+        return normalize(input, "hex input");
+    }
+
+    /**
+     * 使用指定标签规范化十六进制字符串，去除前缀和空白字符
+     *
+     * @param input 待规范化的字符串
+     * @param label 错误提示标签
+     * @return 规范化后的十六进制字符串
+     */
+    public static String normalize(String input, String label) {
         if (input == null) {
-            throw new GmkitException("Hex input must not be null");
+            throw new GmkitException("Invalid " + label + ": input must not be null");
         }
         String normalized = input.trim();
         if (normalized.startsWith("0x") || normalized.startsWith("0X")) {
@@ -81,5 +92,4 @@ public final class HexCodec {
         return normalized;
     }
 }
-
 

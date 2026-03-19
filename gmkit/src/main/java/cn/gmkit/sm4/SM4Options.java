@@ -63,6 +63,10 @@ public final class SM4Options {
         return Bytes.clone(iv);
     }
 
+    byte[] ivUnsafe() {
+        return iv;
+    }
+
     /**
      * 获取 AEAD 附加认证数据。
      *
@@ -70,6 +74,10 @@ public final class SM4Options {
      */
     public byte[] aad() {
         return Bytes.clone(aad);
+    }
+
+    byte[] aadUnsafe() {
+        return aad;
     }
 
     /**
@@ -88,6 +96,10 @@ public final class SM4Options {
      */
     public byte[] tag() {
         return Bytes.clone(tag);
+    }
+
+    byte[] tagUnsafe() {
+        return tag;
     }
 
     /**
@@ -210,4 +222,3 @@ public final class SM4Options {
         }
     }
 }
-

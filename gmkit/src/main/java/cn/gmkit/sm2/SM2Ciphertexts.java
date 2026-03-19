@@ -152,13 +152,36 @@ public final class SM2Ciphertexts {
         if (looksLikeAsn1(ciphertext)) {
             return decodeDer(ciphertext, mode);
         }
+        validateRaw(ciphertext);
         return ciphertext;
+    }
+
+    static byte[] normalizeForDecrypt(byte[] ciphertext, SM2CipherMode mode) {
+        byte[] safeCiphertext = Bytes.requireNonNull(ciphertext, "SM2 ciphertext");
+        if (looksLikeAsn1(safeCiphertext)) {
+            return decodeDer(safeCiphertext, mode);
+        }
+        validateRaw(safeCiphertext);
+        return safeCiphertext;
     }
 
     static boolean looksLikeAsn1(byte[] ciphertext) {
         return ciphertext != null
             && ciphertext.length > 2
             && ciphertext[0] == 0x30;
+    }
+
+    private static void validateRaw(byte[] ciphertext) {
+        if (ciphertext == null) {
+            throw new GmkitException("SM2 ciphertext must not be null");
+        }
+        if (ciphertext.length < SM2Domain.MIN_CIPHERTEXT_LENGTH) {
+            throw new GmkitException(
+                "Invalid SM2 ciphertext: expected raw C1||C3||C2 or C1||C2||C3 bytes, but length was " + ciphertext.length);
+        }
+        if (ciphertext[0] != 0x04) {
+            throw new GmkitException("Invalid SM2 ciphertext: raw format must start with uncompressed point prefix 0x04");
+        }
     }
 }
 

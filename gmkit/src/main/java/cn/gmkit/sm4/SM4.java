@@ -1,5 +1,6 @@
 package cn.gmkit.sm4;
 
+import cn.gmkit.core.GmkitException;
 import cn.gmkit.core.GmSecurityContext;
 import cn.gmkit.core.HexCodec;
 import cn.gmkit.core.Texts;
@@ -145,7 +146,10 @@ public final class SM4 {
      * @return 明文字节数组
      */
     public static byte[] decrypt(byte[] key, SM4CipherResult result, SM4Options options) {
-        return decrypt(key, result.ciphertext(), SM4AeadSupport.withResultTag(options, result.tag()));
+        if (result == null) {
+            throw new GmkitException("SM4 result must not be null");
+        }
+        return decrypt(key, result.ciphertextUnsafe(), SM4AeadSupport.withResultTag(options, result.tagUnsafe()));
     }
 
     /**
@@ -171,4 +175,3 @@ public final class SM4 {
         return SM4CipherProcessor.decrypt(key, ciphertext, options);
     }
 }
-

@@ -1,6 +1,13 @@
 package cn.gmkit.sm2;
 
-import cn.gmkit.core.*;
+import cn.gmkit.core.Base64Codec;
+import cn.gmkit.core.ByteEncodings;
+import cn.gmkit.core.Bytes;
+import cn.gmkit.core.GmSecurityContext;
+import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.HexCodec;
+import cn.gmkit.core.SM2SignatureFormat;
+import cn.gmkit.core.SM2SignatureInputFormat;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -16,9 +23,11 @@ final class SM2SignerSupport {
 
     static byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
         SM2SignOptions resolved = options != null ? options : SM2SignOptions.builder().build();
-        String publicKeyHex = SM2KeyOps.getPublicKeyFromPrivateKey(privateKeyHex, false);
-        byte[] eHash = computeE(publicKeyHex, message, resolved.userId(), resolved.skipZComputation());
-        return signDigest(privateKeyHex, eHash, resolved.signatureFormat(), resolved.securityContext());
+        byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
+        ECPrivateKeyParameters privateKey = SM2KeyOps.toPrivateKeyParameters(privateKeyHex);
+        ECPoint publicPoint = SM2KeyOps.derivePublicPoint(privateKey);
+        byte[] eHash = computeE(publicPoint, safeMessage, resolved.userId(), resolved.skipZComputation());
+        return signDigest(privateKey, eHash, resolved.signatureFormat(), resolved.securityContext());
     }
 
     static String signHex(String privateKeyHex, byte[] message, SM2SignOptions options) {
@@ -35,6 +44,14 @@ final class SM2SignerSupport {
         SM2SignatureFormat signatureFormat,
         GmSecurityContext securityContext) {
         ECPrivateKeyParameters privateKey = SM2KeyOps.toPrivateKeyParameters(privateKeyHex);
+        return signDigest(privateKey, Bytes.requireNonNull(eHash, "SM2 digest"), signatureFormat, securityContext);
+    }
+
+    private static byte[] signDigest(
+        ECPrivateKeyParameters privateKey,
+        byte[] eHash,
+        SM2SignatureFormat signatureFormat,
+        GmSecurityContext securityContext) {
         SM2DigestSigner signer = new SM2DigestSigner();
         signer.init(true, new ParametersWithRandom(privateKey, SM2Domain.context(securityContext).secureRandom()));
         try {
@@ -49,9 +66,11 @@ final class SM2SignerSupport {
     static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
         SM2VerifyOptions resolved = options != null ? options : SM2VerifyOptions.builder().build();
         try {
+            byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
+            ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
             byte[] derSignature = SM2Signatures.normalizeToDer(signature, resolved.signatureFormat());
-            byte[] eHash = computeE(publicKeyHex, message, resolved.userId(), resolved.skipZComputation());
-            return verifyDigest(publicKeyHex, eHash, derSignature);
+            byte[] eHash = computeE(publicKey.getQ(), safeMessage, resolved.userId(), resolved.skipZComputation());
+            return verifyDigest(publicKey, eHash, derSignature);
         } catch (RuntimeException ex) {
             return false;
         }
@@ -64,41 +83,53 @@ final class SM2SignerSupport {
 
     static boolean verifyDigest(String publicKeyHex, byte[] eHash, byte[] derSignature) {
         ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
+        return verifyDigest(publicKey, Bytes.requireNonNull(eHash, "SM2 digest"), Bytes.requireNonNull(derSignature, "SM2 signature"));
+    }
+
+    private static boolean verifyDigest(ECPublicKeyParameters publicKey, byte[] eHash, byte[] derSignature) {
         SM2DigestSigner signer = new SM2DigestSigner();
         signer.init(false, publicKey);
         return signer.verifySignature(eHash, derSignature);
     }
 
     static byte[] computeZ(String userId, String publicKeyHex) {
+        return computeZ(userId, SM2KeyOps.toPublicKeyPoint(publicKeyHex));
+    }
+
+    private static byte[] computeZ(String userId, ECPoint publicPoint) {
         byte[] userIdBytes = SM2Domain.userIdBytes(userId);
         byte[] entl = SM2Domain.userIdBitLength(userIdBytes);
-        ECPoint publicPoint = SM2KeyOps.toPublicKeyPoint(publicKeyHex).normalize();
+        ECPoint normalizedPoint = publicPoint.normalize();
         byte[] px = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
             SM2Domain.CURVE_LENGTH,
-            publicPoint.getAffineXCoord().toBigInteger());
+            normalizedPoint.getAffineXCoord().toBigInteger());
         byte[] py = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
             SM2Domain.CURVE_LENGTH,
-            publicPoint.getAffineYCoord().toBigInteger());
+            normalizedPoint.getAffineYCoord().toBigInteger());
         return cn.gmkit.sm3.SM3.digest(
             Bytes.concat(entl, userIdBytes, SM2Domain.CURVE_A, SM2Domain.CURVE_B, SM2Domain.CURVE_GX, SM2Domain.CURVE_GY, px, py));
     }
 
     static byte[] computeE(String publicKeyHex, byte[] message, String userId, boolean skipZComputation) {
+        return computeE(SM2KeyOps.toPublicKeyPoint(publicKeyHex), message, userId, skipZComputation);
+    }
+
+    private static byte[] computeE(ECPoint publicPoint, byte[] message, String userId, boolean skipZComputation) {
+        byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
         if (skipZComputation) {
-            return computeEWithoutZ(message);
+            return computeEWithoutZ(safeMessage);
         }
-        return cn.gmkit.sm3.SM3.digest(Bytes.concat(computeZ(userId, publicKeyHex), message));
+        return cn.gmkit.sm3.SM3.digest(Bytes.concat(computeZ(userId, publicPoint), safeMessage));
     }
 
     static byte[] computeEWithoutZ(byte[] message) {
-        return cn.gmkit.sm3.SM3.digest(message);
+        return cn.gmkit.sm3.SM3.digest(Bytes.requireNonNull(message, "SM2 message"));
     }
 
     static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
         if (expectedS2 == null || confirmationTag == null) {
             return false;
         }
-        return MessageDigest.isEqual(Bytes.clone(expectedS2), Bytes.clone(confirmationTag));
+        return MessageDigest.isEqual(expectedS2, confirmationTag);
     }
 }
-

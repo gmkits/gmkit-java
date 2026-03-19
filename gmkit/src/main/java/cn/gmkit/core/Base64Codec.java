@@ -9,6 +9,9 @@ import java.util.Base64;
  */
 public final class Base64Codec {
 
+    private static final Base64.Decoder DECODER = Base64.getDecoder();
+    private static final Base64.Encoder ENCODER = Base64.getEncoder();
+
     private Base64Codec() {
     }
 
@@ -25,7 +28,7 @@ public final class Base64Codec {
             throw new GmkitException("Invalid " + label + ": input must not be null");
         }
         try {
-            return Base64.getDecoder().decode(input.trim());
+            return DECODER.decode(input.trim());
         } catch (IllegalArgumentException ex) {
             throw new GmkitException("Invalid " + label + ": must be base64", ex);
         }
@@ -38,7 +41,7 @@ public final class Base64Codec {
      * @return Base64编码后的字符串
      */
     public static String encode(byte[] input) {
-        return Base64.getEncoder().encodeToString(input);
+        return ENCODER.encodeToString(Bytes.requireNonNull(input, "Base64 input"));
     }
 
     /**
@@ -52,12 +55,11 @@ public final class Base64Codec {
             return false;
         }
         try {
-            Base64.getDecoder().decode(input.trim());
+            DECODER.decode(input.trim());
             return true;
         } catch (IllegalArgumentException ex) {
             return false;
         }
     }
 }
-
 

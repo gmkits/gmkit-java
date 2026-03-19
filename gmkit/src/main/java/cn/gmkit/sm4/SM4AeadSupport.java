@@ -25,8 +25,9 @@ final class SM4AeadSupport {
     }
 
     static byte[] appendTagIfNeeded(byte[] ciphertext, byte[] tag, SM4CipherMode mode, int tagLength) {
+        byte[] safeCiphertext = Bytes.requireNonNull(ciphertext, "Ciphertext");
         if (mode != SM4CipherMode.GCM && mode != SM4CipherMode.CCM) {
-            return Bytes.clone(ciphertext);
+            return safeCiphertext;
         }
         if (tag == null || tag.length == 0) {
             throw new GmkitException("SM4 " + mode.name() + " decryption requires an authentication tag; set it via SM4Options.tag(...)");
@@ -34,7 +35,7 @@ final class SM4AeadSupport {
         if (tag.length != tagLength) {
             throw new GmkitException("Invalid SM4 " + mode.name() + " authentication tag length: expected " + tagLength + " bytes");
         }
-        return Bytes.concat(ciphertext, tag);
+        return Bytes.concat(safeCiphertext, tag);
     }
 
     static SM4Options withResultTag(SM4Options options, byte[] resultTag) {
