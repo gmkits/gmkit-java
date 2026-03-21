@@ -117,7 +117,7 @@ public final class SM4Options {
      * @return 配置了标签时返回 {@code true}
      */
     public boolean hasTag() {
-        return tag != null && tag.length > 0;
+        return cn.gmkit.core.Checks.hasBytes(tag);
     }
 
     /**
@@ -142,7 +142,7 @@ public final class SM4Options {
          * @return 当前构建器
          */
         public Builder mode(SM4CipherMode mode) {
-            this.mode = mode != null ? mode : SM4CipherMode.ECB;
+            this.mode = cn.gmkit.core.Checks.defaultIfNull(mode, SM4CipherMode.ECB);
             return this;
         }
 
@@ -153,7 +153,7 @@ public final class SM4Options {
          * @return 当前构建器
          */
         public Builder padding(SM4Padding padding) {
-            this.padding = padding != null ? padding : SM4Padding.PKCS7;
+            this.padding = cn.gmkit.core.Checks.defaultIfNull(padding, SM4Padding.PKCS7);
             return this;
         }
 
@@ -208,7 +208,7 @@ public final class SM4Options {
          * @return 当前构建器
          */
         public Builder securityContext(GmSecurityContext securityContext) {
-            this.securityContext = securityContext != null ? securityContext : GmSecurityContexts.defaults();
+            this.securityContext = cn.gmkit.core.Checks.defaultIfNull(securityContext, GmSecurityContexts.defaults());
             return this;
         }
 

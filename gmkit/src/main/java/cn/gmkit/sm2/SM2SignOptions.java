@@ -1,5 +1,6 @@
 package cn.gmkit.sm2;
 
+import cn.gmkit.core.Checks;
 import cn.gmkit.core.GmSecurityContext;
 import cn.gmkit.core.GmSecurityContexts;
 import cn.gmkit.core.SM2SignatureFormat;
@@ -87,7 +88,7 @@ public final class SM2SignOptions {
          * @return 构建器实例
          */
         public Builder signatureFormat(SM2SignatureFormat signatureFormat) {
-            this.signatureFormat = signatureFormat != null ? signatureFormat : SM2SignatureFormat.RAW;
+            this.signatureFormat = Checks.defaultIfNull(signatureFormat, SM2SignatureFormat.RAW);
             return this;
         }
 
@@ -98,7 +99,7 @@ public final class SM2SignOptions {
          * @return 构建器实例
          */
         public Builder userId(String userId) {
-            this.userId = userId != null ? userId : SM2.DEFAULT_USER_ID;
+            this.userId = Checks.defaultIfNull(userId, SM2.DEFAULT_USER_ID);
             return this;
         }
 
@@ -120,7 +121,7 @@ public final class SM2SignOptions {
          * @return 构建器实例
          */
         public Builder securityContext(GmSecurityContext securityContext) {
-            this.securityContext = securityContext != null ? securityContext : GmSecurityContexts.defaults();
+            this.securityContext = Checks.defaultIfNull(securityContext, GmSecurityContexts.defaults());
             return this;
         }
 

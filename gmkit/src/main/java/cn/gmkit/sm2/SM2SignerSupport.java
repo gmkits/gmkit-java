@@ -1,13 +1,6 @@
 package cn.gmkit.sm2;
 
-import cn.gmkit.core.Base64Codec;
-import cn.gmkit.core.ByteEncodings;
-import cn.gmkit.core.Bytes;
-import cn.gmkit.core.GmSecurityContext;
-import cn.gmkit.core.GmkitException;
-import cn.gmkit.core.HexCodec;
-import cn.gmkit.core.SM2SignatureFormat;
-import cn.gmkit.core.SM2SignatureInputFormat;
+import cn.gmkit.core.*;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -22,7 +15,7 @@ final class SM2SignerSupport {
     }
 
     static byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        SM2SignOptions resolved = options != null ? options : SM2SignOptions.builder().build();
+        SM2SignOptions resolved = Checks.defaultIfNull(options, SM2SignOptions.builder().build());
         byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
         ECPrivateKeyParameters privateKey = SM2KeyOps.toPrivateKeyParameters(privateKeyHex);
         ECPoint publicPoint = SM2KeyOps.derivePublicPoint(privateKey);
@@ -56,7 +49,7 @@ final class SM2SignerSupport {
         signer.init(true, new ParametersWithRandom(privateKey, SM2Domain.context(securityContext).secureRandom()));
         try {
             byte[] der = signer.generateSignature(eHash);
-            SM2SignatureFormat resolvedFormat = signatureFormat != null ? signatureFormat : SM2SignatureFormat.RAW;
+            SM2SignatureFormat resolvedFormat = Checks.defaultIfNull(signatureFormat, SM2SignatureFormat.RAW);
             return resolvedFormat == SM2SignatureFormat.DER ? der : SM2Signatures.derToRaw(der);
         } catch (CryptoException ex) {
             throw new GmkitException("SM2 signing failed", ex);
@@ -64,7 +57,7 @@ final class SM2SignerSupport {
     }
 
     static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
-        SM2VerifyOptions resolved = options != null ? options : SM2VerifyOptions.builder().build();
+        SM2VerifyOptions resolved = Checks.defaultIfNull(options, SM2VerifyOptions.builder().build());
         try {
             byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
             ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
@@ -106,7 +99,7 @@ final class SM2SignerSupport {
         byte[] py = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
             SM2Domain.CURVE_LENGTH,
             normalizedPoint.getAffineYCoord().toBigInteger());
-        return cn.gmkit.sm3.SM3.digest(
+        return cn.gmkit.sm3.SM3Support.digest(
             Bytes.concat(entl, userIdBytes, SM2Domain.CURVE_A, SM2Domain.CURVE_B, SM2Domain.CURVE_GX, SM2Domain.CURVE_GY, px, py));
     }
 
@@ -119,15 +112,15 @@ final class SM2SignerSupport {
         if (skipZComputation) {
             return computeEWithoutZ(safeMessage);
         }
-        return cn.gmkit.sm3.SM3.digest(Bytes.concat(computeZ(userId, publicPoint), safeMessage));
+        return cn.gmkit.sm3.SM3Support.digest(Bytes.concat(computeZ(userId, publicPoint), safeMessage));
     }
 
     static byte[] computeEWithoutZ(byte[] message) {
-        return cn.gmkit.sm3.SM3.digest(Bytes.requireNonNull(message, "SM2 message"));
+        return cn.gmkit.sm3.SM3Support.digest(Bytes.requireNonNull(message, "SM2 message"));
     }
 
     static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
-        if (expectedS2 == null || confirmationTag == null) {
+        if (!Checks.hasBytes(expectedS2) || !Checks.hasBytes(confirmationTag)) {
             return false;
         }
         return MessageDigest.isEqual(expectedS2, confirmationTag);

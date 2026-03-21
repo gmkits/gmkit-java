@@ -12,7 +12,7 @@ class SM4UtilTest {
 
     @Test
     void cbcPkcs7ShouldRoundTrip() {
-        SM4CipherResult encrypted = SM4.encrypt(
+        SM4CipherResult encrypted = SM4Util.encrypt(
             KEY,
             Texts.utf8("hello gmkit-java"),
             SM4Options.builder()
@@ -21,7 +21,7 @@ class SM4UtilTest {
                 .iv(IV)
                 .build());
 
-        byte[] decrypted = SM4.decrypt(
+        byte[] decrypted = SM4Util.decrypt(
             KEY,
             encrypted,
             SM4Options.builder()
@@ -38,7 +38,7 @@ class SM4UtilTest {
         byte[] aad = Texts.utf8("metadata");
         byte[] gcmIv = HexCodec.decodeStrict("00112233445566778899aabb", "IV");
 
-        SM4CipherResult encrypted = SM4.encrypt(
+        SM4CipherResult encrypted = SM4Util.encrypt(
             KEY,
             Texts.utf8("aead payload"),
             SM4Options.builder()
@@ -51,7 +51,7 @@ class SM4UtilTest {
         assertNotNull(encrypted.tag());
         assertEquals(16, encrypted.tag().length);
 
-        byte[] decrypted = SM4.decrypt(
+        byte[] decrypted = SM4Util.decrypt(
             KEY,
             encrypted,
             SM4Options.builder()
@@ -69,7 +69,7 @@ class SM4UtilTest {
         byte[] aad = Texts.utf8("metadata");
         byte[] gcmIv = HexCodec.decodeStrict("00112233445566778899aabb", "IV");
 
-        SM4CipherResult encrypted = SM4.encrypt(
+        SM4CipherResult encrypted = SM4Util.encrypt(
             KEY,
             Texts.utf8("aead payload"),
             SM4Options.builder()
@@ -83,7 +83,7 @@ class SM4UtilTest {
 
         assertThrows(
             GmkitException.class,
-            () -> SM4.decrypt(
+            () -> SM4Util.decrypt(
                 KEY,
                 encrypted.ciphertext(),
                 SM4Options.builder()

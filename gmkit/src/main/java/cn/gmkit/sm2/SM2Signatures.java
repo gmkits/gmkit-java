@@ -1,5 +1,6 @@
 package cn.gmkit.sm2;
 
+import cn.gmkit.core.Checks;
 import cn.gmkit.core.GmkitException;
 import cn.gmkit.core.SM2SignatureFormat;
 import cn.gmkit.core.SM2SignatureInputFormat;
@@ -47,9 +48,7 @@ public final class SM2Signatures {
         if (inputFormat == SM2SignatureInputFormat.RAW) {
             return rawToDer(signature);
         }
-        if (signature == null) {
-            throw new GmkitException("Invalid SM2 signature: input must not be null");
-        }
+        Checks.requireNonNull(signature, "Invalid SM2 signature: input");
         if (signature.length == SM2Domain.RAW_SIGNATURE_LENGTH) {
             return rawToDer(signature);
         }
@@ -83,7 +82,8 @@ public final class SM2Signatures {
      * @throws GmkitException 如果转换失败
      */
     public static byte[] rawToDer(byte[] rawSignature) {
-        if (rawSignature == null || rawSignature.length != SM2Domain.RAW_SIGNATURE_LENGTH) {
+        Checks.requireNonNull(rawSignature, "Invalid SM2 RAW signature");
+        if (rawSignature.length != SM2Domain.RAW_SIGNATURE_LENGTH) {
             throw new GmkitException("Invalid SM2 RAW signature: expected " + SM2Domain.RAW_SIGNATURE_LENGTH + " bytes (r||s)");
         }
         try {

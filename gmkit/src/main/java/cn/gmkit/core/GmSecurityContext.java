@@ -15,8 +15,8 @@ public final class GmSecurityContext {
     private final boolean registerProvider;
 
     private GmSecurityContext(Builder builder) {
-        this.provider = builder.provider != null ? builder.provider : BcProviders.defaultProvider();
-        this.secureRandom = builder.secureRandom != null ? builder.secureRandom : new SecureRandom();
+        this.provider = Checks.defaultIfNull(builder.provider, BcProviders.defaultProvider());
+        this.secureRandom = Checks.defaultIfNull(builder.secureRandom, new SecureRandom());
         this.registerProvider = builder.registerProvider;
     }
 
@@ -113,5 +113,4 @@ public final class GmSecurityContext {
         }
     }
 }
-
 

@@ -2,6 +2,7 @@ package cn.gmkit.sm4;
 
 import cn.gmkit.core.Base64Codec;
 import cn.gmkit.core.Bytes;
+import cn.gmkit.core.Checks;
 import cn.gmkit.core.HexCodec;
 
 /**
@@ -57,7 +58,7 @@ public final class SM4CipherResult {
      * @return 如果包含认证标签返回true，否则返回false
      */
     public boolean hasTag() {
-        return tag != null && tag.length > 0;
+        return Checks.hasBytes(tag);
     }
 
     /**

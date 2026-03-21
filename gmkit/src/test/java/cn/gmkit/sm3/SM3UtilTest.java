@@ -12,26 +12,27 @@ class SM3UtilTest {
     void digestShouldMatchKnownVector() {
         assertEquals(
             "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0",
-            SM3.digestHex("abc"));
+            SM3Util.digestHex("abc"));
     }
 
     @Test
     void hmacOverloadsShouldStayConsistent() {
         byte[] key = Texts.utf8("secret");
-        byte[] binary = SM3.hmac(key, Texts.utf8("hello"));
-        byte[] text = SM3.hmac(key, "hello");
+        byte[] binary = SM3Util.hmac(key, Texts.utf8("hello"));
+        byte[] text = SM3Util.hmac(key, "hello");
 
         assertArrayEquals(binary, text);
         assertEquals(32, binary.length);
-        assertNotEquals(HexCodec.encode(SM3.digest("hello")), HexCodec.encode(binary));
+        assertNotEquals(HexCodec.encode(SM3Util.digest("hello")), HexCodec.encode(binary));
     }
 
     @Test
     void utilAliasShouldRemainUsable() {
+        SM3 sm3 = new SM3();
         assertEquals(
             "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0",
             SM3Util.digestHex("abc"));
-        assertArrayEquals(SM3.hmac(Texts.utf8("secret"), "hello"), SM3Util.hmac(Texts.utf8("secret"), "hello"));
+        assertArrayEquals(sm3.hmac(Texts.utf8("secret"), "hello"), SM3Util.hmac(Texts.utf8("secret"), "hello"));
     }
 }
 

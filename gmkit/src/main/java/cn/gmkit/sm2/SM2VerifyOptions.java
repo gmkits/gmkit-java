@@ -1,5 +1,6 @@
 package cn.gmkit.sm2;
 
+import cn.gmkit.core.Checks;
 import cn.gmkit.core.SM2SignatureInputFormat;
 
 /**
@@ -73,7 +74,7 @@ public final class SM2VerifyOptions {
          * @return 构建器实例
          */
         public Builder signatureFormat(SM2SignatureInputFormat signatureFormat) {
-            this.signatureFormat = signatureFormat != null ? signatureFormat : SM2SignatureInputFormat.AUTO;
+            this.signatureFormat = Checks.defaultIfNull(signatureFormat, SM2SignatureInputFormat.AUTO);
             return this;
         }
 
@@ -84,7 +85,7 @@ public final class SM2VerifyOptions {
          * @return 构建器实例
          */
         public Builder userId(String userId) {
-            this.userId = userId != null ? userId : SM2.DEFAULT_USER_ID;
+            this.userId = Checks.defaultIfNull(userId, SM2.DEFAULT_USER_ID);
             return this;
         }
 

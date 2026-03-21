@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description 字节数组编码工具类，提供字节数组与字符串之间的编码转换
- * @since 1.0.0
+ * 二进制、十六进制与 Base64 之间的统一转换工具。
  */
 public final class ByteEncodings {
 
@@ -18,14 +16,14 @@ public final class ByteEncodings {
      * @return 编码后的字符串
      */
     public static String encode(byte[] input, OutputFormat outputFormat) {
-        OutputFormat format = outputFormat != null ? outputFormat : OutputFormat.HEX;
+        OutputFormat format = Checks.defaultIfNull(outputFormat, OutputFormat.HEX);
         if (format == OutputFormat.HEX) {
             return HexCodec.encode(input);
         }
         if (format == OutputFormat.BASE64) {
             return Base64Codec.encode(input);
         }
-        throw new GmkitException("Unsupported output format: " + format);
+        throw new GmkitException(Messages.bilingual("不支持的输出格式: " + format, "Unsupported output format: " + format));
     }
 
     /**
@@ -46,7 +44,7 @@ public final class ByteEncodings {
         if (inputFormat == InputFormat.BASE64) {
             return Base64Codec.decode(input, label);
         }
-        throw new GmkitException("Unsupported input format: " + inputFormat);
+        throw new GmkitException(Messages.bilingual("不支持的输入格式: " + inputFormat, "Unsupported input format: " + inputFormat));
     }
 
     /**
@@ -57,21 +55,21 @@ public final class ByteEncodings {
      * @return 解码后的字节数组
      */
     public static byte[] decodeAuto(String input, String label) {
-        String trimmed = input != null ? input.trim() : null;
-        if (trimmed == null) {
-            throw new GmkitException("Invalid " + label + ": input must not be null");
-        }
-        if (trimmed.isEmpty()) {
-            throw new GmkitException("Invalid " + label + ": input must not be blank");
-        }
+        String trimmed = Checks.requireNonBlank(input, "Invalid " + label + " input");
         String normalizedHex = HexCodec.normalize(trimmed, label);
-        if ((normalizedHex.length() & 1) == 0 && HexCodec.isHex(normalizedHex)) {
+        if (looksLikeHexInput(trimmed, normalizedHex)) {
             return HexCodec.decodeStrict(normalizedHex, label);
         }
-        try {
+        if (Base64Codec.looksLikeBase64(trimmed)) {
             return Base64Codec.decode(trimmed, label);
-        } catch (GmkitException ex) {
-            throw new GmkitException("Invalid " + label + ": must be hexadecimal or base64", ex);
         }
+        throw new GmkitException(Messages.invalidHexOrBase64(label));
+    }
+
+    private static boolean looksLikeHexInput(String originalInput, String normalizedHex) {
+        if (originalInput.startsWith("0x") || originalInput.startsWith("0X")) {
+            return true;
+        }
+        return HexCodec.isHex(normalizedHex);
     }
 }

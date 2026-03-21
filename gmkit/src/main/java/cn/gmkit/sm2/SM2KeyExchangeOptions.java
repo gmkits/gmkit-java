@@ -119,7 +119,7 @@ public final class SM2KeyExchangeOptions {
          * @return 构建器实例
          */
         public Builder selfId(String selfId) {
-            this.selfId = selfId != null ? selfId : SM2.DEFAULT_USER_ID;
+            this.selfId = cn.gmkit.core.Checks.defaultIfNull(selfId, SM2.DEFAULT_USER_ID);
             return this;
         }
 
@@ -130,7 +130,7 @@ public final class SM2KeyExchangeOptions {
          * @return 构建器实例
          */
         public Builder peerId(String peerId) {
-            this.peerId = peerId != null ? peerId : SM2.DEFAULT_USER_ID;
+            this.peerId = cn.gmkit.core.Checks.defaultIfNull(peerId, SM2.DEFAULT_USER_ID);
             return this;
         }
 

@@ -1,6 +1,7 @@
 package cn.gmkit.sm4;
 
 import cn.gmkit.core.Bytes;
+import cn.gmkit.core.Checks;
 import cn.gmkit.core.GmkitException;
 import cn.gmkit.core.SM4CipherMode;
 
@@ -29,7 +30,7 @@ final class SM4AeadSupport {
         if (mode != SM4CipherMode.GCM && mode != SM4CipherMode.CCM) {
             return safeCiphertext;
         }
-        if (tag == null || tag.length == 0) {
+        if (!Checks.hasBytes(tag)) {
             throw new GmkitException("SM4 " + mode.name() + " decryption requires an authentication tag; set it via SM4Options.tag(...)");
         }
         if (tag.length != tagLength) {
@@ -39,7 +40,7 @@ final class SM4AeadSupport {
     }
 
     static SM4Options withResultTag(SM4Options options, byte[] resultTag) {
-        if (resultTag == null || resultTag.length == 0) {
+        if (!Checks.hasBytes(resultTag)) {
             return SM4Support.options(options);
         }
         SM4Options base = SM4Support.options(options);

@@ -2,10 +2,19 @@ package cn.gmkit.sm2;
 
 import cn.gmkit.core.*;
 
+import java.nio.charset.Charset;
+
 /**
- * SM2 静态工具入口。
+ * SM2 对象式入口。
  * <p>
- * 对外保留直接可用的静态 API，内部实现拆分到密钥、加解密、签名和密钥交换等包内协作类。
+ * 这个类面向希望保留实例并重复调用的场景，例如：
+ * 使用同一个安全上下文连续生成密钥、执行加解密、签名验签，或完成密钥交换。
+ * <p>
+ * 如果业务更偏好传统工具类风格，可改用 {@link SM2Util} 的静态方法；两套 API
+ * 在能力上保持一致，只是调用方式不同。
+ * <p>
+ * 兼容性说明：
+ * 本类依赖 BouncyCastle Provider，目标运行环境为 JDK 8 及以上版本。
  */
 public final class SM2 {
 
@@ -34,7 +43,38 @@ public final class SM2 {
      */
     public static final int SM3_DIGEST_LENGTH = 32;
 
-    private SM2() {
+    private final GmSecurityContext securityContext;
+    private final boolean securityContextPinned;
+
+    /**
+     * 创建一个使用默认安全上下文的 SM2 实例。
+     * <p>
+     * 默认情况下会自动解析 Provider 和随机源，适合绝大多数直接调用场景。
+     */
+    public SM2() {
+        this(null);
+    }
+
+    /**
+     * 创建一个绑定指定安全上下文的 SM2 实例。
+     * <p>
+     * 绑定后，该实例的密钥生成、加密、签名和密钥交换会优先使用这里指定的 Provider
+     * 与随机源；当参数为 {@code null} 时，内部会自动回退到默认安全上下文。
+     *
+     * @param securityContext Provider 和随机源配置；传入 {@code null} 时回退为默认配置
+     */
+    public SM2(GmSecurityContext securityContext) {
+        this.securityContext = SM2Domain.context(securityContext);
+        this.securityContextPinned = securityContext != null;
+    }
+
+    /**
+     * 返回当前实例绑定的安全上下文。
+     *
+     * @return 当前实例使用的安全上下文
+     */
+    public GmSecurityContext securityContext() {
+        return securityContext;
     }
 
     /**
@@ -42,8 +82,8 @@ public final class SM2 {
      *
      * @return SM2 密钥对
      */
-    public static SM2KeyPair generateKeyPair() {
-        return generateKeyPair(false, GmSecurityContexts.defaults());
+    public SM2KeyPair generateKeyPair() {
+        return generateKeyPair(false);
     }
 
     /**
@@ -52,28 +92,7 @@ public final class SM2 {
      * @param compressedPublicKey 是否输出压缩公钥
      * @return SM2 密钥对
      */
-    public static SM2KeyPair generateKeyPair(boolean compressedPublicKey) {
-        return generateKeyPair(compressedPublicKey, GmSecurityContexts.defaults());
-    }
-
-    /**
-     * 使用指定安全上下文生成 SM2 密钥。
-     *
-     * @param securityContext Provider 和随机源配置
-     * @return SM2 密钥对
-     */
-    public static SM2KeyPair generateKeyPair(GmSecurityContext securityContext) {
-        return generateKeyPair(false, securityContext);
-    }
-
-    /**
-     * 使用指定安全上下文生成 SM2 密钥。
-     *
-     * @param compressedPublicKey 是否输出压缩公钥
-     * @param securityContext     Provider 和随机源配置
-     * @return SM2 密钥对
-     */
-    public static SM2KeyPair generateKeyPair(boolean compressedPublicKey, GmSecurityContext securityContext) {
+    public SM2KeyPair generateKeyPair(boolean compressedPublicKey) {
         return SM2KeyOps.generateKeyPair(compressedPublicKey, securityContext);
     }
 
@@ -84,7 +103,7 @@ public final class SM2 {
      * @param compressed    是否输出压缩公钥
      * @return 公钥十六进制字符串
      */
-    public static String getPublicKeyFromPrivateKey(String privateKeyHex, boolean compressed) {
+    public String getPublicKeyFromPrivateKey(String privateKeyHex, boolean compressed) {
         return SM2KeyOps.getPublicKeyFromPrivateKey(privateKeyHex, compressed);
     }
 
@@ -94,7 +113,7 @@ public final class SM2 {
      * @param publicKeyHex 公钥十六进制字符串
      * @return 压缩公钥
      */
-    public static String compressPublicKey(String publicKeyHex) {
+    public String compressPublicKey(String publicKeyHex) {
         return SM2KeyOps.compressPublicKey(publicKeyHex);
     }
 
@@ -104,7 +123,7 @@ public final class SM2 {
      * @param publicKeyHex 公钥十六进制字符串
      * @return 未压缩公钥
      */
-    public static String decompressPublicKey(String publicKeyHex) {
+    public String decompressPublicKey(String publicKeyHex) {
         return SM2KeyOps.decompressPublicKey(publicKeyHex);
     }
 
@@ -115,8 +134,32 @@ public final class SM2 {
      * @param data         明文字节数组
      * @return 原始密文
      */
-    public static byte[] encrypt(String publicKeyHex, byte[] data) {
+    public byte[] encrypt(String publicKeyHex, byte[] data) {
         return encrypt(publicKeyHex, data, SM2CipherMode.C1C3C2);
+    }
+
+    /**
+     * 使用 UTF-8 编码后的字符串进行加密。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @return 原始密文
+     */
+    public byte[] encrypt(String publicKeyHex, String data) {
+        return encrypt(publicKeyHex, data, Texts.UTF_8, SM2CipherMode.C1C3C2);
+    }
+
+    /**
+     * 使用指定字符集编码字符串后进行加密。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @param charset      字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param mode         密文布局
+     * @return 原始密文
+     */
+    public byte[] encrypt(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
+        return encrypt(publicKeyHex, Texts.bytes(data, charset), mode);
     }
 
     /**
@@ -127,24 +170,7 @@ public final class SM2 {
      * @param mode         密文布局，传入 {@code null} 时默认 {@code C1C3C2}
      * @return 原始密文
      */
-    public static byte[] encrypt(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return encrypt(publicKeyHex, data, mode, GmSecurityContexts.defaults());
-    }
-
-    /**
-     * 使用指定密文布局和安全上下文加密。
-     *
-     * @param publicKeyHex    公钥十六进制字符串
-     * @param data            明文字节数组
-     * @param mode            密文布局，传入 {@code null} 时默认 {@code C1C3C2}
-     * @param securityContext Provider 和随机源配置
-     * @return 原始密文
-     */
-    public static byte[] encrypt(
-        String publicKeyHex,
-        byte[] data,
-        SM2CipherMode mode,
-        GmSecurityContext securityContext) {
+    public byte[] encrypt(String publicKeyHex, byte[] data, SM2CipherMode mode) {
         return SM2Cryptor.encrypt(publicKeyHex, data, mode, securityContext);
     }
 
@@ -155,8 +181,33 @@ public final class SM2 {
      * @param data         明文字节数组
      * @return 十六进制密文
      */
-    public static String encryptHex(String publicKeyHex, byte[] data) {
+    public String encryptHex(String publicKeyHex, byte[] data) {
         return encryptHex(publicKeyHex, data, SM2CipherMode.C1C3C2);
+    }
+
+    /**
+     * 使用 UTF-8 编码后的字符串加密并输出十六进制密文。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @param mode         密文布局
+     * @return 十六进制密文
+     */
+    public String encryptHex(String publicKeyHex, String data, SM2CipherMode mode) {
+        return encryptHex(publicKeyHex, Texts.bytes(data, Texts.UTF_8), mode);
+    }
+
+    /**
+     * 使用指定字符集编码字符串后加密并输出十六进制密文。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @param charset      字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param mode         密文布局
+     * @return 十六进制密文
+     */
+    public String encryptHex(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
+        return encryptHex(publicKeyHex, Texts.bytes(data, charset), mode);
     }
 
     /**
@@ -167,24 +218,7 @@ public final class SM2 {
      * @param mode         密文布局
      * @return 十六进制密文
      */
-    public static String encryptHex(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return encryptHex(publicKeyHex, data, mode, GmSecurityContexts.defaults());
-    }
-
-    /**
-     * 加密并输出十六进制密文。
-     *
-     * @param publicKeyHex    公钥十六进制字符串
-     * @param data            明文字节数组
-     * @param mode            密文布局
-     * @param securityContext Provider 和随机源配置
-     * @return 十六进制密文
-     */
-    public static String encryptHex(
-        String publicKeyHex,
-        byte[] data,
-        SM2CipherMode mode,
-        GmSecurityContext securityContext) {
+    public String encryptHex(String publicKeyHex, byte[] data, SM2CipherMode mode) {
         return SM2Cryptor.encryptHex(publicKeyHex, data, mode, securityContext);
     }
 
@@ -195,8 +229,33 @@ public final class SM2 {
      * @param data         明文字节数组
      * @return Base64 密文
      */
-    public static String encryptBase64(String publicKeyHex, byte[] data) {
+    public String encryptBase64(String publicKeyHex, byte[] data) {
         return encryptBase64(publicKeyHex, data, SM2CipherMode.C1C3C2);
+    }
+
+    /**
+     * 使用 UTF-8 编码后的字符串加密并输出 Base64 密文。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @param mode         密文布局
+     * @return Base64 密文
+     */
+    public String encryptBase64(String publicKeyHex, String data, SM2CipherMode mode) {
+        return encryptBase64(publicKeyHex, Texts.bytes(data, Texts.UTF_8), mode);
+    }
+
+    /**
+     * 使用指定字符集编码字符串后加密并输出 Base64 密文。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字符串
+     * @param charset      字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param mode         密文布局
+     * @return Base64 密文
+     */
+    public String encryptBase64(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
+        return encryptBase64(publicKeyHex, Texts.bytes(data, charset), mode);
     }
 
     /**
@@ -207,24 +266,7 @@ public final class SM2 {
      * @param mode         密文布局
      * @return Base64 密文
      */
-    public static String encryptBase64(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return encryptBase64(publicKeyHex, data, mode, GmSecurityContexts.defaults());
-    }
-
-    /**
-     * 加密并输出 Base64 密文。
-     *
-     * @param publicKeyHex    公钥十六进制字符串
-     * @param data            明文字节数组
-     * @param mode            密文布局
-     * @param securityContext Provider 和随机源配置
-     * @return Base64 密文
-     */
-    public static String encryptBase64(
-        String publicKeyHex,
-        byte[] data,
-        SM2CipherMode mode,
-        GmSecurityContext securityContext) {
+    public String encryptBase64(String publicKeyHex, byte[] data, SM2CipherMode mode) {
         return SM2Cryptor.encryptBase64(publicKeyHex, data, mode, securityContext);
     }
 
@@ -235,7 +277,7 @@ public final class SM2 {
      * @param ciphertext    原始密文字节数组，支持自动识别 ASN.1 DER
      * @return 明文字节数组
      */
-    public static byte[] decrypt(String privateKeyHex, byte[] ciphertext) {
+    public byte[] decrypt(String privateKeyHex, byte[] ciphertext) {
         return decrypt(privateKeyHex, ciphertext, SM2CipherMode.C1C3C2);
     }
 
@@ -247,7 +289,7 @@ public final class SM2 {
      * @param mode          密文布局
      * @return 明文字节数组
      */
-    public static byte[] decrypt(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
+    public byte[] decrypt(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
         return SM2Cryptor.decrypt(privateKeyHex, ciphertext, mode);
     }
 
@@ -258,7 +300,7 @@ public final class SM2 {
      * @param ciphertext    十六进制或 Base64 密文
      * @return 明文字节数组
      */
-    public static byte[] decrypt(String privateKeyHex, String ciphertext) {
+    public byte[] decrypt(String privateKeyHex, String ciphertext) {
         return decrypt(privateKeyHex, ciphertext, SM2CipherMode.C1C3C2);
     }
 
@@ -270,8 +312,45 @@ public final class SM2 {
      * @param mode          密文布局
      * @return 明文字节数组
      */
-    public static byte[] decrypt(String privateKeyHex, String ciphertext, SM2CipherMode mode) {
+    public byte[] decrypt(String privateKeyHex, String ciphertext, SM2CipherMode mode) {
         return SM2Cryptor.decrypt(privateKeyHex, ciphertext, mode);
+    }
+
+    /**
+     * 使用 UTF-8 解码解密结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param ciphertext    原始密文字节数组
+     * @param mode          密文布局
+     * @return 明文字符串
+     */
+    public String decryptToUtf8(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
+        return Texts.utf8(decrypt(privateKeyHex, ciphertext, mode));
+    }
+
+    /**
+     * 使用 UTF-8 解码字符串形式的密文解密结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param ciphertext    十六进制或 Base64 密文
+     * @param mode          密文布局
+     * @return 明文字符串
+     */
+    public String decryptToUtf8(String privateKeyHex, String ciphertext, SM2CipherMode mode) {
+        return Texts.utf8(decrypt(privateKeyHex, ciphertext, mode));
+    }
+
+    /**
+     * 使用指定字符集解码解密结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param ciphertext    原始密文字节数组
+     * @param charset       字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param mode          密文布局
+     * @return 明文字符串
+     */
+    public String decryptToString(String privateKeyHex, byte[] ciphertext, Charset charset, SM2CipherMode mode) {
+        return Texts.text(decrypt(privateKeyHex, ciphertext, mode), charset);
     }
 
     /**
@@ -281,8 +360,33 @@ public final class SM2 {
      * @param message       原文消息
      * @return 签名字节数组
      */
-    public static byte[] sign(String privateKeyHex, byte[] message) {
-        return sign(privateKeyHex, message, SM2SignOptions.builder().build());
+    public byte[] sign(String privateKeyHex, byte[] message) {
+        return sign(privateKeyHex, message, null);
+    }
+
+    /**
+     * 对 UTF-8 文本签名。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param options       签名参数
+     * @return 签名字节数组
+     */
+    public byte[] sign(String privateKeyHex, String message, SM2SignOptions options) {
+        return sign(privateKeyHex, message, Texts.UTF_8, options);
+    }
+
+    /**
+     * 对指定字符集编码后的文本签名。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param charset       字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param options       签名参数
+     * @return 签名字节数组
+     */
+    public byte[] sign(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
+        return sign(privateKeyHex, Texts.bytes(message, charset), options);
     }
 
     /**
@@ -293,8 +397,8 @@ public final class SM2 {
      * @param options       签名参数，传入 {@code null} 时使用默认值
      * @return 签名字节数组
      */
-    public static byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return SM2SignerSupport.sign(privateKeyHex, message, options);
+    public byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return SM2SignerSupport.sign(privateKeyHex, message, resolveSignOptions(options));
     }
 
     /**
@@ -305,8 +409,16 @@ public final class SM2 {
      * @param options       签名参数
      * @return 十六进制签名
      */
-    public static String signHex(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return SM2SignerSupport.signHex(privateKeyHex, message, options);
+    public String signHex(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return SM2SignerSupport.signHex(privateKeyHex, message, resolveSignOptions(options));
+    }
+
+    public String signHex(String privateKeyHex, String message, SM2SignOptions options) {
+        return signHex(privateKeyHex, message, Texts.UTF_8, options);
+    }
+
+    public String signHex(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
+        return signHex(privateKeyHex, Texts.bytes(message, charset), options);
     }
 
     /**
@@ -317,8 +429,16 @@ public final class SM2 {
      * @param options       签名参数
      * @return Base64 签名
      */
-    public static String signBase64(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return SM2SignerSupport.signBase64(privateKeyHex, message, options);
+    public String signBase64(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return SM2SignerSupport.signBase64(privateKeyHex, message, resolveSignOptions(options));
+    }
+
+    public String signBase64(String privateKeyHex, String message, SM2SignOptions options) {
+        return signBase64(privateKeyHex, message, Texts.UTF_8, options);
+    }
+
+    public String signBase64(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
+        return signBase64(privateKeyHex, Texts.bytes(message, charset), options);
     }
 
     /**
@@ -329,7 +449,7 @@ public final class SM2 {
      * @param signatureFormat 输出签名格式
      * @return 签名字节数组
      */
-    public static byte[] signWithoutZ(String privateKeyHex, byte[] message, SM2SignatureFormat signatureFormat) {
+    public byte[] signWithoutZ(String privateKeyHex, byte[] message, SM2SignatureFormat signatureFormat) {
         return sign(
             privateKeyHex,
             message,
@@ -347,24 +467,7 @@ public final class SM2 {
      * @param signatureFormat 输出签名格式
      * @return 签名字节数组
      */
-    public static byte[] signDigest(String privateKeyHex, byte[] eHash, SM2SignatureFormat signatureFormat) {
-        return signDigest(privateKeyHex, eHash, signatureFormat, GmSecurityContexts.defaults());
-    }
-
-    /**
-     * 对外部已计算好的 e 值直接签名。
-     *
-     * @param privateKeyHex   私钥十六进制字符串
-     * @param eHash           已计算好的 e 值
-     * @param signatureFormat 输出签名格式
-     * @param securityContext Provider 和随机源配置
-     * @return 签名字节数组
-     */
-    public static byte[] signDigest(
-        String privateKeyHex,
-        byte[] eHash,
-        SM2SignatureFormat signatureFormat,
-        GmSecurityContext securityContext) {
+    public byte[] signDigest(String privateKeyHex, byte[] eHash, SM2SignatureFormat signatureFormat) {
         return SM2SignerSupport.signDigest(privateKeyHex, eHash, signatureFormat, securityContext);
     }
 
@@ -376,8 +479,8 @@ public final class SM2 {
      * @param signature    签名字节数组，支持 RAW/DER 自动识别
      * @return 验签结果
      */
-    public static boolean verify(String publicKeyHex, byte[] message, byte[] signature) {
-        return verify(publicKeyHex, message, signature, SM2VerifyOptions.builder().build());
+    public boolean verify(String publicKeyHex, byte[] message, byte[] signature) {
+        return verify(publicKeyHex, message, signature, null);
     }
 
     /**
@@ -389,8 +492,8 @@ public final class SM2 {
      * @param options      验签参数
      * @return 验签结果
      */
-    public static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
-        return SM2SignerSupport.verify(publicKeyHex, message, signature, options);
+    public boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
+        return SM2SignerSupport.verify(publicKeyHex, message, signature, resolveVerifyOptions(options));
     }
 
     /**
@@ -402,8 +505,48 @@ public final class SM2 {
      * @param options      验签参数
      * @return 验签结果
      */
-    public static boolean verify(String publicKeyHex, byte[] message, String signature, SM2VerifyOptions options) {
-        return SM2SignerSupport.verify(publicKeyHex, message, signature, options);
+    public boolean verify(String publicKeyHex, byte[] message, String signature, SM2VerifyOptions options) {
+        return SM2SignerSupport.verify(publicKeyHex, message, signature, resolveVerifyOptions(options));
+    }
+
+    /**
+     * 对 UTF-8 文本验签。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param message      原文消息
+     * @param signature    签名字节数组
+     * @param options      验签参数
+     * @return 验签结果
+     */
+    public boolean verify(String publicKeyHex, String message, byte[] signature, SM2VerifyOptions options) {
+        return verify(publicKeyHex, message, Texts.UTF_8, signature, options);
+    }
+
+    /**
+     * 对指定字符集编码后的文本验签。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param message      原文消息
+     * @param charset      字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param signature    签名字节数组
+     * @param options      验签参数
+     * @return 验签结果
+     */
+    public boolean verify(String publicKeyHex, String message, Charset charset, byte[] signature, SM2VerifyOptions options) {
+        return verify(publicKeyHex, Texts.bytes(message, charset), signature, options);
+    }
+
+    /**
+     * 对 UTF-8 文本和字符串形式签名进行验签。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param message      原文消息
+     * @param signature    十六进制或 Base64 形式的签名
+     * @param options      验签参数
+     * @return 验签结果
+     */
+    public boolean verify(String publicKeyHex, String message, String signature, SM2VerifyOptions options) {
+        return verify(publicKeyHex, Texts.bytes(message, Texts.UTF_8), signature, options);
     }
 
     /**
@@ -415,7 +558,7 @@ public final class SM2 {
      * @param signatureFormat 签名输入格式
      * @return 验签结果
      */
-    public static boolean verifyWithoutZ(
+    public boolean verifyWithoutZ(
         String publicKeyHex,
         byte[] message,
         byte[] signature,
@@ -438,7 +581,7 @@ public final class SM2 {
      * @param derSignature ASN.1 DER 签名
      * @return 验签结果
      */
-    public static boolean verifyDigest(String publicKeyHex, byte[] eHash, byte[] derSignature) {
+    public boolean verifyDigest(String publicKeyHex, byte[] eHash, byte[] derSignature) {
         return SM2SignerSupport.verifyDigest(publicKeyHex, eHash, derSignature);
     }
 
@@ -449,7 +592,7 @@ public final class SM2 {
      * @param publicKeyHex 公钥十六进制字符串
      * @return Z 值
      */
-    public static byte[] computeZ(String userId, String publicKeyHex) {
+    public byte[] computeZ(String userId, String publicKeyHex) {
         return SM2SignerSupport.computeZ(userId, publicKeyHex);
     }
 
@@ -462,8 +605,22 @@ public final class SM2 {
      * @param skipZComputation 是否跳过 Z 计算
      * @return e 值
      */
-    public static byte[] computeE(String publicKeyHex, byte[] message, String userId, boolean skipZComputation) {
+    public byte[] computeE(String publicKeyHex, byte[] message, String userId, boolean skipZComputation) {
         return SM2SignerSupport.computeE(publicKeyHex, message, userId, skipZComputation);
+    }
+
+    /**
+     * 使用指定字符集编码消息后计算 SM2 的 e 值。
+     *
+     * @param publicKeyHex     公钥十六进制字符串
+     * @param message          原文消息
+     * @param charset          字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param userId           用户标识
+     * @param skipZComputation 是否跳过 Z 计算
+     * @return e 值
+     */
+    public byte[] computeE(String publicKeyHex, String message, Charset charset, String userId, boolean skipZComputation) {
+        return computeE(publicKeyHex, Texts.bytes(message, charset), userId, skipZComputation);
     }
 
     /**
@@ -472,8 +629,19 @@ public final class SM2 {
      * @param message 原文消息
      * @return e 值
      */
-    public static byte[] computeEWithoutZ(byte[] message) {
+    public byte[] computeEWithoutZ(byte[] message) {
         return SM2SignerSupport.computeEWithoutZ(message);
+    }
+
+    /**
+     * 使用指定字符集编码消息后，直接计算不含 Z 的 e 值。
+     *
+     * @param message 原文消息
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return e 值
+     */
+    public byte[] computeEWithoutZ(String message, Charset charset) {
+        return computeEWithoutZ(Texts.bytes(message, charset));
     }
 
     /**
@@ -486,7 +654,7 @@ public final class SM2 {
      * @param options                    交换参数
      * @return 共享密钥
      */
-    public static byte[] keyExchange(
+    public byte[] keyExchange(
         String selfStaticPrivateKeyHex,
         String selfEphemeralPrivateKeyHex,
         String peerStaticPublicKeyHex,
@@ -510,7 +678,7 @@ public final class SM2 {
      * @param options                    交换参数
      * @return 共享密钥和确认标签
      */
-    public static SM2KeyExchangeResult keyExchangeWithConfirmation(
+    public SM2KeyExchangeResult keyExchangeWithConfirmation(
         String selfStaticPrivateKeyHex,
         String selfEphemeralPrivateKeyHex,
         String peerStaticPublicKeyHex,
@@ -531,8 +699,24 @@ public final class SM2 {
      * @param confirmationTag 对端返回的确认标签
      * @return 一致时返回 {@code true}
      */
-    public static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
+    public boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
         return SM2SignerSupport.confirmResponder(expectedS2, confirmationTag);
     }
-}
 
+    private SM2SignOptions resolveSignOptions(SM2SignOptions options) {
+        SM2SignOptions base = Checks.defaultIfNull(options, SM2SignOptions.builder().build());
+        if (!securityContextPinned) {
+            return base;
+        }
+        return SM2SignOptions.builder()
+            .signatureFormat(base.signatureFormat())
+            .userId(base.userId())
+            .skipZComputation(base.skipZComputation())
+            .securityContext(securityContext)
+            .build();
+    }
+
+    private SM2VerifyOptions resolveVerifyOptions(SM2VerifyOptions options) {
+        return Checks.defaultIfNull(options, SM2VerifyOptions.builder().build());
+    }
+}

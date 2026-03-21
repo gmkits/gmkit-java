@@ -3,9 +3,9 @@ package cn.gmkit.core;
 import java.util.Arrays;
 
 /**
- * @author mumu
- * @description 字节数组工具类，提供字节数组的常用操作
- * @since 1.0.0
+ * 字节数组工具。
+ * <p>
+ * 负责最基础的拷贝、拼接、定长校验和常量时间比较。
  */
 public final class Bytes {
 
@@ -31,10 +31,7 @@ public final class Bytes {
      * @throws GmkitException 如果字节数组为null
      */
     public static byte[] requireNonNull(byte[] input, String label) {
-        if (input == null) {
-            throw new GmkitException(label + " must not be null");
-        }
-        return input;
+        return Checks.requireNonNull(input, label);
     }
 
     /**
@@ -49,7 +46,7 @@ public final class Bytes {
     public static byte[] requireLength(byte[] input, int expectedLength, String label) {
         requireNonNull(input, label);
         if (input.length != expectedLength) {
-            throw new GmkitException(label + " must be " + expectedLength + " bytes, but was " + input.length);
+            throw new GmkitException(Messages.expectedLength(label, expectedLength, input.length));
         }
         return input;
     }
@@ -87,7 +84,7 @@ public final class Bytes {
      * @return 如果两个数组内容相同返回true，否则返回false
      */
     public static boolean constantTimeEquals(byte[] left, byte[] right) {
-        if (left == null || right == null || left.length != right.length) {
+        if (!Checks.hasBytes(left) || !Checks.hasBytes(right) || left.length != right.length) {
             return false;
         }
         int diff = 0;
@@ -109,4 +106,3 @@ public final class Bytes {
         return Arrays.copyOfRange(input, from, to);
     }
 }
-

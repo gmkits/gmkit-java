@@ -9,9 +9,9 @@ class SM2UtilTest {
 
     @Test
     void compressAndDecompressShouldRoundTrip() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
-        String compressed = SM2.compressPublicKey(keyPair.publicKey());
-        String decompressed = SM2.decompressPublicKey(compressed);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
+        String compressed = SM2Util.compressPublicKey(keyPair.publicKey());
+        String decompressed = SM2Util.decompressPublicKey(compressed);
 
         assertTrue(compressed.startsWith("02") || compressed.startsWith("03"));
         assertEquals(keyPair.publicKey(), decompressed);
@@ -19,16 +19,16 @@ class SM2UtilTest {
 
     @Test
     void signAndVerifyShouldSupportRawAndDer() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] message = Texts.utf8("gmkit-java-sm2");
 
-        byte[] rawSignature = SM2.sign(
+        byte[] rawSignature = SM2Util.sign(
             keyPair.privateKey(),
             message,
             SM2SignOptions.builder()
                 .signatureFormat(SM2SignatureFormat.RAW)
                 .build());
-        byte[] derSignature = SM2.sign(
+        byte[] derSignature = SM2Util.sign(
             keyPair.privateKey(),
             message,
             SM2SignOptions.builder()
@@ -36,14 +36,14 @@ class SM2UtilTest {
                 .userId("")
                 .build());
 
-        assertTrue(SM2.verify(
+        assertTrue(SM2Util.verify(
             keyPair.publicKey(),
             message,
             rawSignature,
             SM2VerifyOptions.builder()
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
-        assertTrue(SM2.verify(
+        assertTrue(SM2Util.verify(
             keyPair.publicKey(),
             message,
             derSignature,
@@ -55,17 +55,17 @@ class SM2UtilTest {
 
     @Test
     void signAndVerifyShouldSupportSkipZ() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] message = Texts.utf8("skip-z");
 
-        byte[] signature = SM2.sign(
+        byte[] signature = SM2Util.sign(
             keyPair.privateKey(),
             message,
             SM2SignOptions.builder()
                 .skipZComputation(true)
                 .build());
 
-        assertTrue(SM2.verify(
+        assertTrue(SM2Util.verify(
             keyPair.publicKey(),
             message,
             signature,
@@ -73,7 +73,7 @@ class SM2UtilTest {
                 .skipZComputation(true)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
-        assertFalse(SM2.verify(
+        assertFalse(SM2Util.verify(
             keyPair.publicKey(),
             message,
             signature,
@@ -85,31 +85,31 @@ class SM2UtilTest {
 
     @Test
     void encryptAndDecryptShouldSupportBothLayouts() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] plaintext = Texts.utf8("layout-compatibility");
 
-        byte[] c1c3c2 = SM2.encrypt(
+        byte[] c1c3c2 = SM2Util.encrypt(
             keyPair.publicKey(),
             plaintext,
             SM2CipherMode.C1C3C2);
-        byte[] c1c2c3 = SM2.encrypt(
+        byte[] c1c2c3 = SM2Util.encrypt(
             keyPair.publicKey(),
             plaintext,
             SM2CipherMode.C1C2C3);
 
         assertArrayEquals(
             plaintext,
-            SM2.decrypt(keyPair.privateKey(), c1c3c2, SM2CipherMode.C1C3C2));
+            SM2Util.decrypt(keyPair.privateKey(), c1c3c2, SM2CipherMode.C1C3C2));
         assertArrayEquals(
             plaintext,
-            SM2.decrypt(keyPair.privateKey(), c1c2c3, SM2CipherMode.C1C2C3));
+            SM2Util.decrypt(keyPair.privateKey(), c1c2c3, SM2CipherMode.C1C2C3));
         assertNotEquals(HexCodec.encode(c1c3c2), HexCodec.encode(c1c2c3));
     }
 
     @Test
     void ciphertextDerCodecShouldRoundTrip() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
-        byte[] ciphertext = SM2.encrypt(
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
+        byte[] ciphertext = SM2Util.encrypt(
             keyPair.publicKey(),
             Texts.utf8("der-roundtrip"));
 
@@ -121,8 +121,8 @@ class SM2UtilTest {
 
     @Test
     void signatureCodecShouldRoundTripBetweenDerAndRaw() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
-        byte[] signature = SM2.sign(
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
+        byte[] signature = SM2Util.sign(
             keyPair.privateKey(),
             Texts.utf8("codec"),
             SM2SignOptions.builder().signatureFormat(SM2SignatureFormat.DER).build());
@@ -135,28 +135,28 @@ class SM2UtilTest {
 
     @Test
     void signDigestShouldSupportDirectEInput() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] directE = Texts.utf8("abc");
-        byte[] rawSignature = SM2.signDigest(keyPair.privateKey(), directE, SM2SignatureFormat.RAW);
+        byte[] rawSignature = SM2Util.signDigest(keyPair.privateKey(), directE, SM2SignatureFormat.RAW);
 
-        assertTrue(SM2.verifyDigest(keyPair.publicKey(), directE, SM2Signatures.rawToDer(rawSignature)));
-        assertFalse(SM2.verifyWithoutZ(keyPair.publicKey(), directE, rawSignature, SM2SignatureInputFormat.RAW));
+        assertTrue(SM2Util.verifyDigest(keyPair.publicKey(), directE, SM2Signatures.rawToDer(rawSignature)));
+        assertFalse(SM2Util.verifyWithoutZ(keyPair.publicKey(), directE, rawSignature, SM2SignatureInputFormat.RAW));
     }
 
     @Test
     void decryptShouldAcceptAsn1CiphertextFromBytesHexAndBase64() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] plaintext = Texts.utf8("asn1-compatible");
-        byte[] rawCiphertext = SM2.encrypt(keyPair.publicKey(), plaintext, SM2CipherMode.C1C3C2);
+        byte[] rawCiphertext = SM2Util.encrypt(keyPair.publicKey(), plaintext, SM2CipherMode.C1C3C2);
         byte[] asn1Ciphertext = SM2Ciphertexts.encodeAsn1(rawCiphertext, SM2CipherMode.C1C3C2);
 
-        assertArrayEquals(plaintext, SM2.decrypt(keyPair.privateKey(), asn1Ciphertext, SM2CipherMode.C1C3C2));
+        assertArrayEquals(plaintext, SM2Util.decrypt(keyPair.privateKey(), asn1Ciphertext, SM2CipherMode.C1C3C2));
         assertArrayEquals(
             plaintext,
-            SM2.decrypt(keyPair.privateKey(), HexCodec.encode(asn1Ciphertext), SM2CipherMode.C1C3C2));
+            SM2Util.decrypt(keyPair.privateKey(), HexCodec.encode(asn1Ciphertext), SM2CipherMode.C1C3C2));
         assertArrayEquals(
             plaintext,
-            SM2.decrypt(keyPair.privateKey(), Base64Codec.encode(asn1Ciphertext), SM2CipherMode.C1C3C2));
+            SM2Util.decrypt(keyPair.privateKey(), Base64Codec.encode(asn1Ciphertext), SM2CipherMode.C1C3C2));
     }
 
     @Test
@@ -173,40 +173,40 @@ class SM2UtilTest {
                 + "9C4030684DA568D9D37CA10ACA7CA77F7D389C2E46630720B56323BF7B1A2E4B",
             "directESignature");
 
-        assertTrue(SM2.verify(
+        assertTrue(SM2Util.verify(
             publicKey,
             message,
             withZSignature,
             SM2VerifyOptions.builder()
-                .userId(SM2.LEGACY_USER_ID)
+                .userId(SM2Util.LEGACY_USER_ID)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
-        assertFalse(SM2.verifyWithoutZ(publicKey, message, withZSignature, SM2SignatureInputFormat.RAW));
+        assertFalse(SM2Util.verifyWithoutZ(publicKey, message, withZSignature, SM2SignatureInputFormat.RAW));
 
-        assertFalse(SM2.verify(
+        assertFalse(SM2Util.verify(
             publicKey,
             message,
             directESignature,
             SM2VerifyOptions.builder()
-                .userId(SM2.LEGACY_USER_ID)
+                .userId(SM2Util.LEGACY_USER_ID)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
-        assertFalse(SM2.verifyWithoutZ(publicKey, message, directESignature, SM2SignatureInputFormat.RAW));
-        assertFalse(SM2.verifyDigest(
+        assertFalse(SM2Util.verifyWithoutZ(publicKey, message, directESignature, SM2SignatureInputFormat.RAW));
+        assertFalse(SM2Util.verifyDigest(
             publicKey,
-            SM2.computeEWithoutZ(message),
+            SM2Util.computeEWithoutZ(message),
             SM2Signatures.rawToDer(directESignature)));
-        assertTrue(SM2.verifyDigest(publicKey, message, SM2Signatures.rawToDer(directESignature)));
+        assertTrue(SM2Util.verifyDigest(publicKey, message, SM2Signatures.rawToDer(directESignature)));
     }
 
     @Test
     void keyExchangeShouldDeriveSameSharedSecretAndConfirmTags() {
-        SM2KeyPair initiatorStatic = SM2.generateKeyPair(false);
-        SM2KeyPair initiatorEphemeral = SM2.generateKeyPair(false);
-        SM2KeyPair responderStatic = SM2.generateKeyPair(false);
-        SM2KeyPair responderEphemeral = SM2.generateKeyPair(false);
+        SM2KeyPair initiatorStatic = SM2Util.generateKeyPair(false);
+        SM2KeyPair initiatorEphemeral = SM2Util.generateKeyPair(false);
+        SM2KeyPair responderStatic = SM2Util.generateKeyPair(false);
+        SM2KeyPair responderEphemeral = SM2Util.generateKeyPair(false);
 
-        byte[] initiatorKey = SM2.keyExchange(
+        byte[] initiatorKey = SM2Util.keyExchange(
             initiatorStatic.privateKey(),
             initiatorEphemeral.privateKey(),
             responderStatic.publicKey(),
@@ -217,7 +217,7 @@ class SM2UtilTest {
                 .selfId("ABCDEFG1234")
                 .peerId("1234567ABCD")
                 .build());
-        byte[] responderKey = SM2.keyExchange(
+        byte[] responderKey = SM2Util.keyExchange(
             responderStatic.privateKey(),
             responderEphemeral.privateKey(),
             initiatorStatic.publicKey(),
@@ -231,7 +231,7 @@ class SM2UtilTest {
 
         assertArrayEquals(initiatorKey, responderKey);
 
-        SM2KeyExchangeResult responderResult = SM2.keyExchangeWithConfirmation(
+        SM2KeyExchangeResult responderResult = SM2Util.keyExchangeWithConfirmation(
             responderStatic.privateKey(),
             responderEphemeral.privateKey(),
             initiatorStatic.publicKey(),
@@ -242,7 +242,7 @@ class SM2UtilTest {
                 .selfId("1234567ABCD")
                 .peerId("ABCDEFG1234")
                 .build());
-        SM2KeyExchangeResult initiatorResult = SM2.keyExchangeWithConfirmation(
+        SM2KeyExchangeResult initiatorResult = SM2Util.keyExchangeWithConfirmation(
             initiatorStatic.privateKey(),
             initiatorEphemeral.privateKey(),
             responderStatic.publicKey(),
@@ -256,12 +256,12 @@ class SM2UtilTest {
                 .build());
 
         assertArrayEquals(responderResult.key(), initiatorResult.key());
-        assertTrue(SM2.confirmResponder(responderResult.s2(), initiatorResult.s2()));
+        assertTrue(SM2Util.confirmResponder(responderResult.s2(), initiatorResult.s2()));
     }
 
     @Test
     void utilAliasShouldRemainUsable() {
-        SM2KeyPair keyPair = SM2.generateKeyPair(false);
+        SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] message = Texts.utf8("compat-api");
 
         byte[] ciphertext = SM2Util.encrypt(keyPair.publicKey(), message, SM2CipherMode.C1C3C2);

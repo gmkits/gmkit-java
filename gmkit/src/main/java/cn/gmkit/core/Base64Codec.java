@@ -3,9 +3,7 @@ package cn.gmkit.core;
 import java.util.Base64;
 
 /**
- * @author mumu
- * @description Base64编解码工具类
- * @since 1.0.0
+ * Base64 编解码工具。
  */
 public final class Base64Codec {
 
@@ -24,13 +22,11 @@ public final class Base64Codec {
      * @throws GmkitException 如果输入不是有效的Base64字符串
      */
     public static byte[] decode(String input, String label) {
-        if (input == null) {
-            throw new GmkitException("Invalid " + label + ": input must not be null");
-        }
+        String trimmed = Checks.requireNonBlank(input, "Invalid " + label + " input");
         try {
-            return DECODER.decode(input.trim());
+            return DECODER.decode(trimmed);
         } catch (IllegalArgumentException ex) {
-            throw new GmkitException("Invalid " + label + ": must be base64", ex);
+            throw new GmkitException(Messages.invalidBase64(label), ex);
         }
     }
 
@@ -51,15 +47,55 @@ public final class Base64Codec {
      * @return 如果是有效的Base64编码返回true，否则返回false
      */
     public static boolean isBase64(String input) {
-        if (input == null || input.trim().isEmpty()) {
+        return looksLikeBase64(input);
+    }
+
+    /**
+     * 轻量判断字符串是否符合 Base64 字符集和填充规则。
+     * <p>
+     * 这里不做真正解码，避免把“格式探测”变成一次完整的分配和解码。
+     *
+     * @param input 待判断字符串
+     * @return 看起来像标准 Base64 时返回 {@code true}
+     */
+    public static boolean looksLikeBase64(String input) {
+        if (input == null) {
             return false;
         }
-        try {
-            DECODER.decode(input.trim());
-            return true;
-        } catch (IllegalArgumentException ex) {
+        String trimmed = input.trim();
+        int length = trimmed.length();
+        if (length == 0 || (length & 3) != 0) {
             return false;
         }
+        int paddingStart = length;
+        int paddingCount = 0;
+        for (int i = 0; i < length; i++) {
+            char ch = trimmed.charAt(i);
+            if (ch == '=') {
+                if (paddingStart == length) {
+                    paddingStart = i;
+                }
+                paddingCount++;
+                if (paddingCount > 2) {
+                    return false;
+                }
+                continue;
+            }
+            if (paddingStart != length) {
+                return false;
+            }
+            if (!isBase64Char(ch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isBase64Char(char ch) {
+        return (ch >= 'A' && ch <= 'Z')
+            || (ch >= 'a' && ch <= 'z')
+            || (ch >= '0' && ch <= '9')
+            || ch == '+'
+            || ch == '/';
     }
 }
-

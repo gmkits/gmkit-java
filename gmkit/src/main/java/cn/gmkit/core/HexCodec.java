@@ -3,9 +3,7 @@ package cn.gmkit.core;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * @author mumu
- * @description 十六进制编解码工具类
- * @since 1.0.0
+ * 十六进制编解码工具。
  */
 public final class HexCodec {
 
@@ -23,10 +21,10 @@ public final class HexCodec {
     public static byte[] decodeStrict(String input, String label) {
         String normalized = normalize(input, label);
         if ((normalized.length() & 1) != 0) {
-            throw new GmkitException("Invalid " + label + ": hexadecimal strings must have an even length");
+            throw new GmkitException(Messages.invalidHexEven(label));
         }
         if (!isHex(normalized)) {
-            throw new GmkitException("Invalid " + label + ": must be a hexadecimal string");
+            throw new GmkitException(Messages.invalidHex(label));
         }
         return Hex.decode(normalized);
     }
@@ -82,14 +80,24 @@ public final class HexCodec {
      * @return 规范化后的十六进制字符串
      */
     public static String normalize(String input, String label) {
-        if (input == null) {
-            throw new GmkitException("Invalid " + label + ": input must not be null");
-        }
-        String normalized = input.trim();
+        String normalized = stripWhitespace(Checks.requireNonBlank(input, "Invalid " + label + " input"));
         if (normalized.startsWith("0x") || normalized.startsWith("0X")) {
             normalized = normalized.substring(2);
         }
+        if (normalized.isEmpty()) {
+            throw new GmkitException(Messages.invalidBlankInput(label));
+        }
         return normalized;
     }
-}
 
+    private static String stripWhitespace(String input) {
+        StringBuilder builder = new StringBuilder(input.length());
+        for (int i = 0; i < input.length(); i++) {
+            char ch = input.charAt(i);
+            if (!Character.isWhitespace(ch)) {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
+    }
+}

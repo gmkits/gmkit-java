@@ -33,15 +33,15 @@ final class SM2Domain {
     }
 
     static GmSecurityContext context(GmSecurityContext securityContext) {
-        return securityContext != null ? securityContext : GmSecurityContexts.defaults();
+        return Checks.defaultIfNull(securityContext, GmSecurityContexts.defaults());
     }
 
     static SM2CipherMode cipherMode(SM2CipherMode mode) {
-        return mode != null ? mode : SM2CipherMode.C1C3C2;
+        return Checks.defaultIfNull(mode, SM2CipherMode.C1C3C2);
     }
 
     static SM2KeyExchangeOptions keyExchangeOptions(SM2KeyExchangeOptions options) {
-        SM2KeyExchangeOptions resolved = options != null ? options : SM2KeyExchangeOptions.builder().build();
+        SM2KeyExchangeOptions resolved = Checks.defaultIfNull(options, SM2KeyExchangeOptions.builder().build());
         if (resolved.keyBits() <= 0) {
             throw new GmkitException("SM2 key exchange keyBits must be positive");
         }
@@ -49,7 +49,7 @@ final class SM2Domain {
     }
 
     static byte[] userIdBytes(String userId) {
-        String resolvedUserId = userId != null ? userId : SM2.DEFAULT_USER_ID;
+        String resolvedUserId = Checks.defaultIfNull(userId, SM2.DEFAULT_USER_ID);
         byte[] bytes = Texts.utf8(resolvedUserId);
         if (bytes.length >= 8192) {
             throw new GmkitException("SM2 user ID must be less than 2^16 bits long");
@@ -64,4 +64,3 @@ final class SM2Domain {
         };
     }
 }
-

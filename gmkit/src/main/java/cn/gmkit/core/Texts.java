@@ -4,9 +4,9 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
- * @author mumu
- * @description 文本编码工具类，提供字符串与字节数组之间的转换
- * @since 1.0.0
+ * 文本与字节数组转换工具。
+ * <p>
+ * 默认字符集为 UTF-8，同时提供显式 {@link Charset} 重载，方便多语言文本或与外部协议对接。
  */
 public final class Texts {
 
@@ -26,10 +26,7 @@ public final class Texts {
      * @throws GmkitException 如果输入为null
      */
     public static byte[] utf8(String input) {
-        if (input == null) {
-            throw new GmkitException("Text input must not be null");
-        }
-        return input.getBytes(UTF_8);
+        return bytes(input, UTF_8);
     }
 
     /**
@@ -40,10 +37,30 @@ public final class Texts {
      * @throws GmkitException 如果输入为null
      */
     public static String utf8(byte[] input) {
-        if (input == null) {
-            throw new GmkitException("Text input must not be null");
-        }
-        return new String(input, UTF_8);
+        return text(input, UTF_8);
+    }
+
+    /**
+     * 使用指定字符集对字符串编码。
+     *
+     * @param input   待编码文本
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 编码后的字节数组
+     */
+    public static byte[] bytes(String input, Charset charset) {
+        Charset resolved = Checks.defaultIfNull(charset, UTF_8);
+        return Checks.requireNonNull(input, "Text input").getBytes(resolved);
+    }
+
+    /**
+     * 使用指定字符集对字节数组解码。
+     *
+     * @param input   待解码字节数组
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 解码后的字符串
+     */
+    public static String text(byte[] input, Charset charset) {
+        Charset resolved = Checks.defaultIfNull(charset, UTF_8);
+        return new String(Checks.requireNonNull(input, "Text input"), resolved);
     }
 }
-
