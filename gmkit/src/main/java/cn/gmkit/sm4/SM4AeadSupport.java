@@ -1,9 +1,6 @@
 package cn.gmkit.sm4;
 
-import cn.gmkit.core.Bytes;
-import cn.gmkit.core.Checks;
-import cn.gmkit.core.GmkitException;
-import cn.gmkit.core.SM4CipherMode;
+import cn.gmkit.core.*;
 
 final class SM4AeadSupport {
 
@@ -15,7 +12,9 @@ final class SM4AeadSupport {
             return new SM4CipherResult(encrypted, null);
         }
         if (encrypted.length < tagLength) {
-            throw new GmkitException("Encrypted output is shorter than requested tag length");
+            throw new GmkitException(Messages.bilingual(
+                "加密输出长度小于请求的 tag 长度",
+                "Encrypted output is shorter than requested tag length"));
         }
         int cipherLength = encrypted.length - tagLength;
         byte[] ciphertext = new byte[cipherLength];
@@ -31,10 +30,14 @@ final class SM4AeadSupport {
             return safeCiphertext;
         }
         if (!Checks.hasBytes(tag)) {
-            throw new GmkitException("SM4 " + mode.name() + " decryption requires an authentication tag; set it via SM4Options.tag(...)");
+            throw new GmkitException(Messages.bilingual(
+                "SM4 " + mode.name() + " 解密必须提供认证 tag，请通过 SM4Options.tag(...) 设置",
+                "SM4 " + mode.name() + " decryption requires an authentication tag; set it via SM4Options.tag(...)"));
         }
         if (tag.length != tagLength) {
-            throw new GmkitException("Invalid SM4 " + mode.name() + " authentication tag length: expected " + tagLength + " bytes");
+            throw new GmkitException(Messages.bilingual(
+                "SM4 " + mode.name() + " 认证 tag 长度无效，应为 " + tagLength + " 字节",
+                "Invalid SM4 " + mode.name() + " authentication tag length: expected " + tagLength + " bytes"));
         }
         return Bytes.concat(safeCiphertext, tag);
     }

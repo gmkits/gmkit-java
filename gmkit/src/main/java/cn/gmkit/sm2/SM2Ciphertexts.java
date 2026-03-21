@@ -2,6 +2,7 @@ package cn.gmkit.sm2;
 
 import cn.gmkit.core.Bytes;
 import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.Messages;
 import cn.gmkit.core.SM2CipherMode;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.util.BigIntegers;
@@ -38,7 +39,9 @@ public final class SM2Ciphertexts {
         int c1Length = SM2Domain.C1_LENGTH;
         int c3Length = SM2.SM3_DIGEST_LENGTH;
         if (normalizedCiphertext.length < c1Length + c3Length) {
-            throw new GmkitException("Invalid SM2 ciphertext: missing C1/C3/C2 segments");
+            throw new GmkitException(Messages.bilingual(
+                "SM2 密文缺少 C1/C3/C2 片段",
+                "Invalid SM2 ciphertext: missing C1/C3/C2 segments"));
         }
         byte[] c1 = Bytes.copyOfRange(normalizedCiphertext, 0, c1Length);
         byte[] c2;
@@ -80,7 +83,9 @@ public final class SM2Ciphertexts {
         try {
             return new DERSequence(vector).getEncoded();
         } catch (IOException ex) {
-            throw new GmkitException("Failed to encode SM2 ciphertext as ASN.1 DER sequence", ex);
+            throw new GmkitException(Messages.bilingual(
+                "SM2 密文编码为 ASN.1 DER 序列失败",
+                "Failed to encode SM2 ciphertext as ASN.1 DER sequence"), ex);
         }
     }
 
@@ -107,7 +112,9 @@ public final class SM2Ciphertexts {
         try {
             ASN1Sequence sequence = ASN1Sequence.getInstance(derCiphertext);
             if (sequence.size() != 4) {
-                throw new GmkitException("Invalid SM2 ciphertext ASN.1 DER encoding: expected SEQUENCE of 4 elements");
+                throw new GmkitException(Messages.bilingual(
+                    "SM2 密文 ASN.1 DER 编码无效，应为包含 4 个元素的 SEQUENCE",
+                    "Invalid SM2 ciphertext ASN.1 DER encoding: expected SEQUENCE of 4 elements"));
             }
             byte[] c1x = BigIntegers.asUnsignedByteArray(
                 SM2Domain.CURVE_LENGTH,
@@ -124,7 +131,7 @@ public final class SM2Ciphertexts {
             }
             return Bytes.concat(c1, first, second);
         } catch (IllegalArgumentException ex) {
-            throw new GmkitException("Invalid SM2 ciphertext ASN.1 DER encoding", ex);
+            throw new GmkitException(Messages.bilingual("SM2 密文 ASN.1 DER 编码无效", "Invalid SM2 ciphertext ASN.1 DER encoding"), ex);
         }
     }
 
@@ -196,23 +203,25 @@ public final class SM2Ciphertexts {
 
     private static byte[] normalizeRawCiphertext(byte[] ciphertext) {
         if (ciphertext == null) {
-            throw new GmkitException("SM2 ciphertext must not be null");
+            throw new GmkitException(Messages.nullValue("SM2 ciphertext"));
         }
         if (ciphertext.length < SM2Domain.MIN_CIPHERTEXT_LENGTH) {
             byte[] prefixed = tryAddMissingPointPrefix(ciphertext);
             if (prefixed != null) {
                 return prefixed;
             }
-            throw new GmkitException(
-                "Invalid SM2 ciphertext: expected raw C1||C3||C2 or C1||C2||C3 bytes, but length was " + ciphertext.length);
+            throw new GmkitException(Messages.bilingual(
+                "SM2 密文长度无效，应为原始 C1||C3||C2 或 C1||C2||C3 格式，当前长度为 " + ciphertext.length + " 字节",
+                "Invalid SM2 ciphertext: expected raw C1||C3||C2 or C1||C2||C3 bytes, but length was " + ciphertext.length));
         }
         if (ciphertext[0] != 0x04) {
             byte[] prefixed = tryAddMissingPointPrefix(ciphertext);
             if (prefixed != null) {
                 return prefixed;
             }
-            throw new GmkitException(
-                "Invalid SM2 ciphertext: raw format must start with uncompressed point prefix 0x04; GmSSL-style ciphertext without the prefix is accepted only when the C1 point can be recovered");
+            throw new GmkitException(Messages.bilingual(
+                "SM2 原始密文必须以未压缩点前缀 0x04 开头；仅当可以恢复 C1 点时，才兼容不带此前缀的 GmSSL 风格密文",
+                "Invalid SM2 ciphertext: raw format must start with uncompressed point prefix 0x04; GmSSL-style ciphertext without the prefix is accepted only when the C1 point can be recovered"));
         }
         return ciphertext;
     }

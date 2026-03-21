@@ -22,7 +22,10 @@ public final class Base64Codec {
      * @throws GmkitException 如果输入不是有效的Base64字符串
      */
     public static byte[] decode(String input, String label) {
-        String trimmed = Checks.requireNonBlank(input, "Invalid " + label + " input");
+        if (input == null || input.trim().isEmpty()) {
+            throw new GmkitException(Messages.invalidBlankInput(label));
+        }
+        String trimmed = input.trim();
         try {
             return DECODER.decode(trimmed);
         } catch (IllegalArgumentException ex) {

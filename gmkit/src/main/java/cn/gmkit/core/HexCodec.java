@@ -80,7 +80,10 @@ public final class HexCodec {
      * @return 规范化后的十六进制字符串
      */
     public static String normalize(String input, String label) {
-        String normalized = stripWhitespace(Checks.requireNonBlank(input, "Invalid " + label + " input"));
+        if (input == null || input.trim().isEmpty()) {
+            throw new GmkitException(Messages.invalidBlankInput(label));
+        }
+        String normalized = stripWhitespace(input);
         if (normalized.startsWith("0x") || normalized.startsWith("0X")) {
             normalized = normalized.substring(2);
         }

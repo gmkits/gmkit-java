@@ -1,9 +1,6 @@
 package cn.gmkit.sm2;
 
-import cn.gmkit.core.GmkitException;
-import cn.gmkit.core.SM2CipherMode;
-import cn.gmkit.core.SM2SignatureInputFormat;
-import cn.gmkit.core.Texts;
+import cn.gmkit.core.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +15,7 @@ class SM2ErrorHandlingTest {
             GmkitException.class,
             () -> sm2.getPublicKeyFromPrivateKey("abc", false));
 
-        assertEquals("Invalid private key: hexadecimal strings must have an even length", exception.getMessage());
+        assertEquals(Messages.invalidHexEven("private key"), exception.getMessage());
     }
 
     @Test
@@ -29,7 +26,9 @@ class SM2ErrorHandlingTest {
             GmkitException.class,
             () -> sm2.compressPublicKey(invalidPrefixKey));
 
-        assertEquals("Invalid public key prefix: must be 02, 03, or 04", exception.getMessage());
+        assertEquals(
+            Messages.bilingual("公钥前缀无效，必须是 02、03 或 04", "Invalid public key prefix: must be 02, 03, or 04"),
+            exception.getMessage());
     }
 
     @Test
@@ -40,7 +39,7 @@ class SM2ErrorHandlingTest {
             GmkitException.class,
             () -> sm2.decrypt(keyPair.privateKey(), "0xabc", SM2CipherMode.C1C3C2));
 
-        assertEquals("Invalid ciphertext: hexadecimal strings must have an even length", exception.getMessage());
+        assertEquals(Messages.invalidHexEven("ciphertext"), exception.getMessage());
     }
 
     @Test
@@ -86,7 +85,7 @@ class SM2ErrorHandlingTest {
             GmkitException.class,
             () -> sm2.sign(keyPair.privateKey(), null));
 
-        assertEquals("SM2 message must not be null", exception.getMessage());
+        assertEquals(Messages.nullValue("SM2 message"), exception.getMessage());
     }
 
     @Test

@@ -18,7 +18,7 @@ class SM4ErrorHandlingTest {
             GmkitException.class,
             () -> sm4.encrypt(new byte[8], Texts.utf8("hello"), SM4Options.builder().build()));
 
-        assertEquals("SM4 key must be 16 bytes, but was 8", exception.getMessage());
+        assertEquals(Messages.expectedLength("SM4 key", 16, 8), exception.getMessage());
     }
 
     @Test
@@ -33,7 +33,9 @@ class SM4ErrorHandlingTest {
                     .padding(SM4Padding.PKCS7)
                     .build()));
 
-        assertEquals("SM4 CBC mode requires an IV/nonce", exception.getMessage());
+        assertEquals(
+            Messages.bilingual("SM4 CBC 模式必须提供 IV/nonce", "SM4 CBC mode requires an IV/nonce"),
+            exception.getMessage());
     }
 
     @Test
@@ -49,7 +51,7 @@ class SM4ErrorHandlingTest {
                     .iv(new byte[8])
                     .build()));
 
-        assertEquals("SM4 CBC IV must be 16 bytes, but was 8", exception.getMessage());
+        assertEquals(Messages.expectedLength("SM4 CBC IV", 16, 8), exception.getMessage());
     }
 
     @Test
@@ -65,7 +67,9 @@ class SM4ErrorHandlingTest {
                     .tagLength(16)
                     .build()));
 
-        assertEquals("Invalid SM4 GCM nonce length: expected 12 to 16 bytes", exception.getMessage());
+        assertEquals(
+            Messages.bilingual("SM4 GCM nonce 长度无效，应为 12 到 16 字节", "Invalid SM4 GCM nonce length: expected 12 to 16 bytes"),
+            exception.getMessage());
     }
 
     @Test
@@ -82,7 +86,9 @@ class SM4ErrorHandlingTest {
                     .aad(Texts.utf8("aad"))
                     .build()));
 
-        assertEquals("SM4 AAD is only supported in GCM or CCM mode", exception.getMessage());
+        assertEquals(
+            Messages.bilingual("SM4 的 AAD 仅在 GCM 或 CCM 模式下受支持", "SM4 AAD is only supported in GCM or CCM mode"),
+            exception.getMessage());
     }
 
     @Test
@@ -108,7 +114,9 @@ class SM4ErrorHandlingTest {
                     .build()));
 
         assertEquals(
-            "SM4 GCM decryption requires an authentication tag; set it via SM4Options.tag(...)",
+            Messages.bilingual(
+                "SM4 GCM 解密必须提供认证 tag，请通过 SM4Options.tag(...) 设置",
+                "SM4 GCM decryption requires an authentication tag; set it via SM4Options.tag(...)"),
             exception.getMessage());
     }
 
@@ -183,6 +191,6 @@ class SM4ErrorHandlingTest {
                     .iv(IV)
                     .build()));
 
-        assertEquals("Plaintext length must be a multiple of 16 bytes", exception.getMessage());
+        assertEquals(Messages.multipleOf("Plaintext", 16), exception.getMessage());
     }
 }

@@ -23,7 +23,7 @@ class CoreCodecsTest {
             GmkitException.class,
             () -> ByteEncodings.decodeAuto("0xabc", "test"));
 
-        assertEquals("Invalid test: hexadecimal strings must have an even length", exception.getMessage());
+        assertEquals(Messages.invalidHexEven("test"), exception.getMessage());
     }
 
     @Test
@@ -38,7 +38,7 @@ class CoreCodecsTest {
             GmkitException.class,
             () -> Base64Codec.decode("  ", "test"));
 
-        assertEquals("Invalid test: input must not be blank", exception.getMessage());
+        assertEquals(Messages.invalidBlankInput("test"), exception.getMessage());
     }
 
     @Test
@@ -56,6 +56,6 @@ class CoreCodecsTest {
             GmkitException.class,
             () -> ByteEncodings.decodeAuto("hello-world", "test"));
 
-        assertEquals("Invalid test: must be hexadecimal or base64", exception.getMessage());
+        assertEquals(Messages.invalidHexOrBase64("test"), exception.getMessage());
     }
 }

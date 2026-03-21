@@ -24,7 +24,9 @@ final class SM4CipherProcessor {
             SecretKey secretKey = generator.generateKey();
             return secretKey.getEncoded();
         } catch (GeneralSecurityException ex) {
-            throw new GmkitException("Failed to generate SM4 key: please verify the configured Provider supports SM4", ex);
+            throw new GmkitException(Messages.bilingual(
+                "生成 SM4 密钥失败，请确认当前 Provider 支持 SM4",
+                "Failed to generate SM4 key: please verify the configured Provider supports SM4"), ex);
         }
     }
 
@@ -33,7 +35,9 @@ final class SM4CipherProcessor {
         byte[] safeKey = Bytes.requireLength(key, SM4Support.BLOCK_SIZE, "SM4 key");
         byte[] safeData = Bytes.requireNonNull(data, "Plaintext");
         if (resolved.hasTag()) {
-            throw new GmkitException("SM4 encryption options must not provide an authentication tag; tags are generated during encryption");
+            throw new GmkitException(Messages.bilingual(
+                "SM4 加密参数中不应预先提供认证 tag，tag 应由加密过程生成",
+                "SM4 encryption options must not provide an authentication tag; tags are generated during encryption"));
         }
         validateOptionCompatibility(resolved);
         byte[] prepared = SM4Paddings.apply(safeData, resolved.mode(), resolved.padding());
@@ -124,7 +128,9 @@ final class SM4CipherProcessor {
 
     private static void validateOptionCompatibility(SM4Options options) {
         if (!isAead(options.mode()) && options.aadUnsafe() != null && options.aadUnsafe().length > 0) {
-            throw new GmkitException("SM4 AAD is only supported in GCM or CCM mode");
+            throw new GmkitException(Messages.bilingual(
+                "SM4 的 AAD 仅在 GCM 或 CCM 模式下受支持",
+                "SM4 AAD is only supported in GCM or CCM mode"));
         }
     }
 
@@ -137,20 +143,26 @@ final class SM4CipherProcessor {
             return null;
         }
         if (iv == null || iv.length == 0) {
-            throw new GmkitException("SM4 " + mode.name() + " mode requires an IV/nonce");
+            throw new GmkitException(Messages.bilingual(
+                "SM4 " + mode.name() + " 模式必须提供 IV/nonce",
+                "SM4 " + mode.name() + " mode requires an IV/nonce"));
         }
         if (mode == SM4CipherMode.CBC || mode == SM4CipherMode.CTR || mode == SM4CipherMode.CFB || mode == SM4CipherMode.OFB) {
             return Bytes.requireLength(iv, SM4Support.BLOCK_SIZE, "SM4 " + mode.name() + " IV");
         }
         if (mode == SM4CipherMode.GCM) {
             if (iv.length < 12 || iv.length > 16) {
-                throw new GmkitException("Invalid SM4 GCM nonce length: expected 12 to 16 bytes");
+                throw new GmkitException(Messages.bilingual(
+                    "SM4 GCM nonce 长度无效，应为 12 到 16 字节",
+                    "Invalid SM4 GCM nonce length: expected 12 to 16 bytes"));
             }
             return iv;
         }
         if (mode == SM4CipherMode.CCM) {
             if (iv.length < 7 || iv.length > 13) {
-                throw new GmkitException("Invalid SM4 CCM nonce length: expected 7 to 13 bytes");
+                throw new GmkitException(Messages.bilingual(
+                    "SM4 CCM nonce 长度无效，应为 7 到 13 字节",
+                    "Invalid SM4 CCM nonce length: expected 7 to 13 bytes"));
             }
             return iv;
         }
@@ -162,21 +174,29 @@ final class SM4CipherProcessor {
         String action = encrypt ? "encryption" : "decryption";
         if (!encrypt && isAuthenticationFailure(ex, mode)) {
             return new GmkitException(
-                "SM4 " + mode.name() + " authentication failed: please verify the key, nonce, AAD and tag",
+                Messages.bilingual(
+                    "SM4 " + mode.name() + " 认证失败，请检查密钥、nonce、AAD 和 tag",
+                    "SM4 " + mode.name() + " authentication failed: please verify the key, nonce, AAD and tag"),
                 ex);
         }
         if (!encrypt && ex instanceof BadPaddingException) {
             return new GmkitException(
-                "SM4 " + mode.name() + " decryption failed: invalid ciphertext or padding",
+                Messages.bilingual(
+                    "SM4 " + mode.name() + " 解密失败，密文或填充无效",
+                    "SM4 " + mode.name() + " decryption failed: invalid ciphertext or padding"),
                 ex);
         }
         if (!encrypt && ex instanceof IllegalBlockSizeException) {
             return new GmkitException(
-                "SM4 " + mode.name() + " decryption failed: ciphertext length is not valid for the configured mode",
+                Messages.bilingual(
+                    "SM4 " + mode.name() + " 解密失败，密文长度与当前模式不匹配",
+                    "SM4 " + mode.name() + " decryption failed: ciphertext length is not valid for the configured mode"),
                 ex);
         }
         return new GmkitException(
-            "SM4 " + mode.name() + " " + action + " failed: please verify the key, mode, padding, IV/nonce and Provider configuration",
+            Messages.bilingual(
+                "SM4 " + mode.name() + (encrypt ? " 加密" : " 解密") + "失败，请检查密钥、模式、填充、IV/nonce 和 Provider 配置",
+                "SM4 " + mode.name() + " " + action + " failed: please verify the key, mode, padding, IV/nonce and Provider configuration"),
             ex);
     }
 

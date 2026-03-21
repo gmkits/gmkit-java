@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SM2StandardVectorsTest {
@@ -126,5 +128,53 @@ class SM2StandardVectorsTest {
         String ciphertext = Base64Codec.encode(sm2.encrypt(keyPair.publicKey(), plaintext, SM2CipherMode.C1C3C2));
 
         assertArrayEquals(plaintext, sm2.decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2));
+    }
+
+    @Test
+    void multilingualTextShouldEncryptDecryptAndSignAcrossCharsets() {
+        SM2KeyPair keyPair = sm2.generateKeyPair(false);
+        String message = "Hello 你好 مرحبا Привет 👋";
+
+        String utf8Ciphertext = sm2.encryptBase64(keyPair.publicKey(), message, SM2CipherMode.C1C3C2);
+        String utf16Ciphertext = sm2.encryptBase64(keyPair.publicKey(), message, StandardCharsets.UTF_16LE, SM2CipherMode.C1C3C2);
+        String utf8Signature = sm2.signBase64(
+            keyPair.privateKey(),
+            message,
+            SM2SignOptions.builder()
+                .signatureFormat(SM2SignatureFormat.DER)
+                .build());
+        String utf16Signature = sm2.signBase64(
+            keyPair.privateKey(),
+            message,
+            StandardCharsets.UTF_16LE,
+            SM2SignOptions.builder()
+                .signatureFormat(SM2SignatureFormat.DER)
+                .build());
+
+        assertEquals(message, sm2.decryptToUtf8(keyPair.privateKey(), utf8Ciphertext, SM2CipherMode.C1C3C2));
+        assertEquals(
+            message,
+            sm2.decryptToString(
+                keyPair.privateKey(),
+                Base64Codec.decode(utf16Ciphertext, "ciphertext"),
+                StandardCharsets.UTF_16LE,
+                SM2CipherMode.C1C3C2));
+        assertTrue(
+            sm2.verify(
+                keyPair.publicKey(),
+                message,
+                utf8Signature,
+                SM2VerifyOptions.builder()
+                    .signatureFormat(SM2SignatureInputFormat.DER)
+                    .build()));
+        assertTrue(
+            sm2.verify(
+                keyPair.publicKey(),
+                message,
+                StandardCharsets.UTF_16LE,
+                Base64Codec.decode(utf16Signature, "signature"),
+                SM2VerifyOptions.builder()
+                    .signatureFormat(SM2SignatureInputFormat.DER)
+                    .build()));
     }
 }

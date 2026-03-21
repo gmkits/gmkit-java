@@ -55,7 +55,10 @@ public final class ByteEncodings {
      * @return 解码后的字节数组
      */
     public static byte[] decodeAuto(String input, String label) {
-        String trimmed = Checks.requireNonBlank(input, "Invalid " + label + " input");
+        if (input == null || input.trim().isEmpty()) {
+            throw new GmkitException(Messages.invalidBlankInput(label));
+        }
+        String trimmed = input.trim();
         String normalizedHex = HexCodec.normalize(trimmed, label);
         if (looksLikeHexInput(trimmed, normalizedHex)) {
             return HexCodec.decodeStrict(normalizedHex, label);

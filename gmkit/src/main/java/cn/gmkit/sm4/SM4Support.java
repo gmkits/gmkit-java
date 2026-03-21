@@ -24,14 +24,18 @@ final class SM4Support {
         if (mode == SM4CipherMode.GCM) {
             int resolved = Checks.defaultIfNull(configuredTagLength, Integer.valueOf(16)).intValue();
             if (resolved < 12 || resolved > 16) {
-                throw new GmkitException("Invalid SM4 GCM tag length: expected 12 to 16 bytes");
+                throw new GmkitException(Messages.bilingual(
+                    "SM4 GCM tag 长度无效，应为 12 到 16 字节",
+                    "Invalid SM4 GCM tag length: expected 12 to 16 bytes"));
             }
             return resolved;
         }
         if (mode == SM4CipherMode.CCM) {
             int resolved = Checks.defaultIfNull(configuredTagLength, Integer.valueOf(16)).intValue();
             if (resolved < 4 || resolved > 16 || (resolved & 1) != 0) {
-                throw new GmkitException("Invalid SM4 CCM tag length: expected an even value between 4 and 16 bytes");
+                throw new GmkitException(Messages.bilingual(
+                    "SM4 CCM tag 长度无效，应为 4 到 16 字节之间的偶数",
+                    "Invalid SM4 CCM tag length: expected an even value between 4 and 16 bytes"));
             }
             return resolved;
         }
@@ -40,8 +44,7 @@ final class SM4Support {
 
     static void requireBlockMultiple(int length, String label) {
         if (length % BLOCK_SIZE != 0) {
-            throw new GmkitException(label + " length must be a multiple of 16 bytes");
+            throw new GmkitException(Messages.multipleOf(label, 16));
         }
     }
 }
-

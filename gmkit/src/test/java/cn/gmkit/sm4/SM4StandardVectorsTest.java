@@ -9,6 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -91,6 +92,51 @@ class SM4StandardVectorsTest {
                 .build());
 
         assertNotEquals(left.ciphertextHex(), right.ciphertextHex());
+    }
+
+    @Test
+    void multilingualStringShouldRoundTripAcrossCharsets() {
+        String plaintext = "Hello 你好 مرحبا Привет 👋";
+
+        SM4CipherResult utf8Encrypted = sm4.encrypt(
+            KEY,
+            plaintext,
+            SM4Options.builder()
+                .mode(SM4CipherMode.CBC)
+                .padding(SM4Padding.PKCS7)
+                .iv(IV)
+                .build());
+        SM4CipherResult utf16Encrypted = sm4.encrypt(
+            KEY,
+            plaintext,
+            StandardCharsets.UTF_16LE,
+            SM4Options.builder()
+                .mode(SM4CipherMode.CBC)
+                .padding(SM4Padding.PKCS7)
+                .iv(IV)
+                .build());
+
+        assertEquals(
+            plaintext,
+            sm4.decryptToUtf8(
+                KEY,
+                utf8Encrypted,
+                SM4Options.builder()
+                    .mode(SM4CipherMode.CBC)
+                    .padding(SM4Padding.PKCS7)
+                    .iv(IV)
+                    .build()));
+        assertEquals(
+            plaintext,
+            sm4.decryptToString(
+                KEY,
+                utf16Encrypted,
+                StandardCharsets.UTF_16LE,
+                SM4Options.builder()
+                    .mode(SM4CipherMode.CBC)
+                    .padding(SM4Padding.PKCS7)
+                    .iv(IV)
+                    .build()));
     }
 
     private static Stream<Arguments> roundTripCases() {

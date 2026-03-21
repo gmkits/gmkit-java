@@ -5,6 +5,8 @@ import cn.gmkit.core.HexCodec;
 import cn.gmkit.core.Texts;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SM3StandardVectorsTest {
@@ -55,6 +57,19 @@ class SM3StandardVectorsTest {
 
         assertNotEquals(HexCodec.encode(left), HexCodec.encode(right));
         assertTrue(hammingDistance(left, right) > 100);
+    }
+
+    @Test
+    void multilingualDigestAndHmacShouldSupportExplicitCharset() {
+        String text = "Hello 你好 مرحبا Привет 👋";
+        byte[] key = Texts.utf8("密钥-key");
+
+        assertEquals(
+            HexCodec.encode(sm3.digest(text, StandardCharsets.UTF_16LE)),
+            sm3.digestHex(text, StandardCharsets.UTF_16LE));
+        assertEquals(
+            Base64Codec.encode(sm3.hmac(key, text, StandardCharsets.UTF_16LE)),
+            sm3.hmacBase64(key, text, StandardCharsets.UTF_16LE));
     }
 
     private static int hammingDistance(byte[] left, byte[] right) {

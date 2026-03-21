@@ -3,6 +3,7 @@ package cn.gmkit.sm2;
 import cn.gmkit.core.GmSecurityContext;
 import cn.gmkit.core.GmkitException;
 import cn.gmkit.core.HexCodec;
+import cn.gmkit.core.Messages;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
@@ -48,7 +49,7 @@ final class SM2KeyOps {
         byte[] privateKeyBytes = decodePrivateKey(privateKeyHex);
         BigInteger d = new BigInteger(1, privateKeyBytes);
         if (d.signum() <= 0 || d.compareTo(SM2Domain.DOMAIN_PARAMS.getN()) >= 0) {
-            throw new GmkitException("Invalid private key scalar");
+            throw new GmkitException(Messages.bilingual("无效的 SM2 私钥标量", "Invalid private key scalar"));
         }
         return new ECPrivateKeyParameters(d, SM2Domain.DOMAIN_PARAMS);
     }
@@ -73,7 +74,7 @@ final class SM2KeyOps {
         byte[] encoded = HexCodec.decodeStrict(normalized, "public key");
         ECPoint point = SM2Domain.X9_PARAMETERS.getCurve().decodePoint(encoded).normalize();
         if (point.isInfinity()) {
-            throw new GmkitException("Invalid public key point");
+            throw new GmkitException(Messages.bilingual("无效的 SM2 公钥点", "Invalid public key point"));
         }
         return point;
     }
@@ -81,16 +82,16 @@ final class SM2KeyOps {
     private static byte[] decodePrivateKey(String privateKeyHex) {
         String normalized = HexCodec.normalize(privateKeyHex, "private key");
         if (normalized.isEmpty() || !HexCodec.isHex(normalized)) {
-            throw new GmkitException("Invalid private key: must be a hexadecimal string");
+            throw new GmkitException(Messages.invalidHex("private key"));
         }
         if ((normalized.length() & 1) != 0) {
-            throw new GmkitException("Invalid private key: hexadecimal strings must have an even length");
+            throw new GmkitException(Messages.invalidHexEven("private key"));
         }
         if (normalized.length() > SM2Domain.CURVE_LENGTH * 2) {
             if (normalized.length() == (SM2Domain.CURVE_LENGTH + 1) * 2 && normalized.startsWith("00")) {
                 normalized = normalized.substring(2);
             } else {
-                throw new GmkitException("Invalid private key: must fit in 32 bytes");
+                throw new GmkitException(Messages.bilingual("私钥必须能装入 32 字节", "Invalid private key: must fit in 32 bytes"));
             }
         }
         if (normalized.length() < SM2Domain.CURVE_LENGTH * 2) {
@@ -107,17 +108,21 @@ final class SM2KeyOps {
     private static String normalizePublicKeyHex(String publicKeyHex) {
         String normalized = HexCodec.normalize(publicKeyHex, "public key");
         if (normalized.isEmpty() || !HexCodec.isHex(normalized)) {
-            throw new GmkitException("Invalid public key: must be hexadecimal");
+            throw new GmkitException(Messages.invalidHex("public key"));
         }
         if ((normalized.length() & 1) != 0) {
-            throw new GmkitException("Invalid public key: hexadecimal strings must have an even length");
+            throw new GmkitException(Messages.invalidHexEven("public key"));
         }
         if (normalized.length() != 66 && normalized.length() != 130) {
-            throw new GmkitException("Invalid public key: only compressed 33-byte or uncompressed 65-byte formats are supported");
+            throw new GmkitException(Messages.bilingual(
+                "公钥仅支持 33 字节压缩格式或 65 字节未压缩格式",
+                "Invalid public key: only compressed 33-byte or uncompressed 65-byte formats are supported"));
         }
         String prefix = normalized.substring(0, 2).toLowerCase();
         if (!"02".equals(prefix) && !"03".equals(prefix) && !"04".equals(prefix)) {
-            throw new GmkitException("Invalid public key prefix: must be 02, 03, or 04");
+            throw new GmkitException(Messages.bilingual(
+                "公钥前缀无效，必须是 02、03 或 04",
+                "Invalid public key prefix: must be 02, 03, or 04"));
         }
         return normalized.toLowerCase();
     }
