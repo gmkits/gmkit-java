@@ -50,4 +50,44 @@ class SMIntegrationTest {
         assertEquals(digest, sm3.digestHex(ciphertext.ciphertext()));
         assertNotEquals(digest, sm3.digestHex(plaintext));
     }
+
+    @Test
+    void hybridHelperShouldRoundTripWithDefaultAeadSettings() {
+        SM2KeyPair keyPair = new SM2().generateKeyPair(false);
+        SM2Sm4Hybrid hybrid = new SM2Sm4Hybrid();
+
+        SM2Sm4HybridPayload payload = hybrid.encrypt(keyPair.publicKey(), "后端统一混合加密");
+
+        assertEquals(SM4CipherMode.GCM, payload.mode());
+        assertEquals(SM4Padding.NONE, payload.padding());
+        assertTrue(payload.hasIv());
+        assertTrue(payload.hasTag());
+        assertEquals(12, payload.iv().length);
+        assertEquals(16, payload.tag().length);
+        assertEquals("后端统一混合加密", hybrid.decryptToUtf8(keyPair.privateKey(), payload));
+    }
+
+    @Test
+    void hybridHelperShouldPreserveExplicitSm4Options() {
+        SM2KeyPair keyPair = new SM2().generateKeyPair(false);
+        SM2Sm4Hybrid hybrid = new SM2Sm4Hybrid();
+        byte[] iv = HexCodec.decodeStrict("000102030405060708090a0b0c0d0e0f", "IV");
+        byte[] aad = Texts.utf8("backend-metadata");
+
+        SM2Sm4HybridPayload payload = hybrid.encrypt(
+            keyPair.publicKey(),
+            Texts.utf8("hybrid-gcm"),
+            SM4Options.builder()
+                .mode(SM4CipherMode.GCM)
+                .padding(SM4Padding.NONE)
+                .iv(iv)
+                .aad(aad)
+                .tagLength(16)
+                .build());
+
+        assertArrayEquals(iv, payload.iv());
+        assertEquals("hybrid-gcm", hybrid.decryptToUtf8(keyPair.privateKey(), payload));
+        assertNotNull(payload.ciphertextBase64());
+        assertNotNull(payload.encryptedKeyBase64());
+    }
 }

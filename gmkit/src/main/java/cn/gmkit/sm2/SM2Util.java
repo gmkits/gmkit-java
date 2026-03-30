@@ -23,8 +23,122 @@ public final class SM2Util {
     public static final String GM_2023_USER_ID = SM2.GM_2023_USER_ID;
     public static final String CURVE_NAME = SM2.CURVE_NAME;
     public static final int SM3_DIGEST_LENGTH = SM2.SM3_DIGEST_LENGTH;
+    private static final SM2 DEFAULT = new SM2();
 
     private SM2Util() {
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 密钥生成入口。
+     *
+     * @return SM2 密钥对
+     */
+    public static SM2KeyPair sm2GenerateKeyPair() {
+        return generateKeyPair();
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 密钥生成入口。
+     *
+     * @param compressedPublicKey 是否输出压缩公钥
+     * @return SM2 密钥对
+     */
+    public static SM2KeyPair sm2GenerateKeyPair(boolean compressedPublicKey) {
+        return generateKeyPair(compressedPublicKey);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 加密入口。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字节数组
+     * @return 原始密文
+     */
+    public static byte[] sm2Encrypt(String publicKeyHex, byte[] data) {
+        return encrypt(publicKeyHex, data);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 加密入口。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param data         明文字节数组
+     * @param mode         密文布局
+     * @return 原始密文
+     */
+    public static byte[] sm2Encrypt(String publicKeyHex, byte[] data, SM2CipherMode mode) {
+        return encrypt(publicKeyHex, data, mode);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 解密入口。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param ciphertext    密文
+     * @return 明文字节数组
+     */
+    public static byte[] sm2Decrypt(String privateKeyHex, byte[] ciphertext) {
+        return decrypt(privateKeyHex, ciphertext);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 解密入口。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param ciphertext    密文
+     * @param mode          密文布局
+     * @return 明文字节数组
+     */
+    public static byte[] sm2Decrypt(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
+        return decrypt(privateKeyHex, ciphertext, mode);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 签名入口。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @return 签名字节数组
+     */
+    public static byte[] sm2Sign(String privateKeyHex, byte[] message) {
+        return DEFAULT.sign(privateKeyHex, message);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 签名入口。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param options       签名参数
+     * @return 签名字节数组
+     */
+    public static byte[] sm2Sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
+        return sign(privateKeyHex, message, options);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 验签入口。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param message      原文消息
+     * @param signature    签名字节数组
+     * @return 验签结果
+     */
+    public static boolean sm2Verify(String publicKeyHex, byte[] message, byte[] signature) {
+        return DEFAULT.verify(publicKeyHex, message, signature);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM2 验签入口。
+     *
+     * @param publicKeyHex 公钥十六进制字符串
+     * @param message      原文消息
+     * @param signature    签名字节数组
+     * @param options      验签参数
+     * @return 验签结果
+     */
+    public static boolean sm2Verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
+        return verify(publicKeyHex, message, signature, options);
     }
 
     /**
@@ -33,7 +147,7 @@ public final class SM2Util {
      * @return SM2 密钥对
      */
     public static SM2KeyPair generateKeyPair() {
-        return new SM2().generateKeyPair();
+        return DEFAULT.generateKeyPair();
     }
 
     /**
@@ -43,7 +157,7 @@ public final class SM2Util {
      * @return SM2 密钥对
      */
     public static SM2KeyPair generateKeyPair(boolean compressedPublicKey) {
-        return new SM2().generateKeyPair(compressedPublicKey);
+        return DEFAULT.generateKeyPair(compressedPublicKey);
     }
 
     public static SM2KeyPair generateKeyPair(GmSecurityContext securityContext) {
@@ -55,23 +169,23 @@ public final class SM2Util {
     }
 
     public static String getPublicKeyFromPrivateKey(String privateKeyHex, boolean compressed) {
-        return new SM2().getPublicKeyFromPrivateKey(privateKeyHex, compressed);
+        return DEFAULT.getPublicKeyFromPrivateKey(privateKeyHex, compressed);
     }
 
     public static String compressPublicKey(String publicKeyHex) {
-        return new SM2().compressPublicKey(publicKeyHex);
+        return DEFAULT.compressPublicKey(publicKeyHex);
     }
 
     public static String decompressPublicKey(String publicKeyHex) {
-        return new SM2().decompressPublicKey(publicKeyHex);
+        return DEFAULT.decompressPublicKey(publicKeyHex);
     }
 
     public static byte[] encrypt(String publicKeyHex, byte[] data) {
-        return new SM2().encrypt(publicKeyHex, data);
+        return DEFAULT.encrypt(publicKeyHex, data);
     }
 
     public static byte[] encrypt(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return new SM2().encrypt(publicKeyHex, data, mode);
+        return DEFAULT.encrypt(publicKeyHex, data, mode);
     }
 
     public static byte[] encrypt(String publicKeyHex, byte[] data, SM2CipherMode mode, GmSecurityContext securityContext) {
@@ -79,19 +193,19 @@ public final class SM2Util {
     }
 
     public static byte[] encrypt(String publicKeyHex, String data) {
-        return new SM2().encrypt(publicKeyHex, data);
+        return DEFAULT.encrypt(publicKeyHex, data);
     }
 
     public static byte[] encrypt(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
-        return new SM2().encrypt(publicKeyHex, data, charset, mode);
+        return DEFAULT.encrypt(publicKeyHex, data, charset, mode);
     }
 
     public static String encryptHex(String publicKeyHex, byte[] data) {
-        return new SM2().encryptHex(publicKeyHex, data);
+        return DEFAULT.encryptHex(publicKeyHex, data);
     }
 
     public static String encryptHex(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return new SM2().encryptHex(publicKeyHex, data, mode);
+        return DEFAULT.encryptHex(publicKeyHex, data, mode);
     }
 
     public static String encryptHex(String publicKeyHex, byte[] data, SM2CipherMode mode, GmSecurityContext securityContext) {
@@ -99,19 +213,19 @@ public final class SM2Util {
     }
 
     public static String encryptHex(String publicKeyHex, String data, SM2CipherMode mode) {
-        return new SM2().encryptHex(publicKeyHex, data, mode);
+        return DEFAULT.encryptHex(publicKeyHex, data, mode);
     }
 
     public static String encryptHex(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
-        return new SM2().encryptHex(publicKeyHex, data, charset, mode);
+        return DEFAULT.encryptHex(publicKeyHex, data, charset, mode);
     }
 
     public static String encryptBase64(String publicKeyHex, byte[] data) {
-        return new SM2().encryptBase64(publicKeyHex, data);
+        return DEFAULT.encryptBase64(publicKeyHex, data);
     }
 
     public static String encryptBase64(String publicKeyHex, byte[] data, SM2CipherMode mode) {
-        return new SM2().encryptBase64(publicKeyHex, data, mode);
+        return DEFAULT.encryptBase64(publicKeyHex, data, mode);
     }
 
     public static String encryptBase64(String publicKeyHex, byte[] data, SM2CipherMode mode, GmSecurityContext securityContext) {
@@ -119,83 +233,83 @@ public final class SM2Util {
     }
 
     public static String encryptBase64(String publicKeyHex, String data, SM2CipherMode mode) {
-        return new SM2().encryptBase64(publicKeyHex, data, mode);
+        return DEFAULT.encryptBase64(publicKeyHex, data, mode);
     }
 
     public static String encryptBase64(String publicKeyHex, String data, Charset charset, SM2CipherMode mode) {
-        return new SM2().encryptBase64(publicKeyHex, data, charset, mode);
+        return DEFAULT.encryptBase64(publicKeyHex, data, charset, mode);
     }
 
     public static byte[] decrypt(String privateKeyHex, byte[] ciphertext) {
-        return new SM2().decrypt(privateKeyHex, ciphertext);
+        return DEFAULT.decrypt(privateKeyHex, ciphertext);
     }
 
     public static byte[] decrypt(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
-        return new SM2().decrypt(privateKeyHex, ciphertext, mode);
+        return DEFAULT.decrypt(privateKeyHex, ciphertext, mode);
     }
 
     public static byte[] decrypt(String privateKeyHex, String ciphertext) {
-        return new SM2().decrypt(privateKeyHex, ciphertext);
+        return DEFAULT.decrypt(privateKeyHex, ciphertext);
     }
 
     public static byte[] decrypt(String privateKeyHex, String ciphertext, SM2CipherMode mode) {
-        return new SM2().decrypt(privateKeyHex, ciphertext, mode);
+        return DEFAULT.decrypt(privateKeyHex, ciphertext, mode);
     }
 
     public static String decryptToUtf8(String privateKeyHex, byte[] ciphertext, SM2CipherMode mode) {
-        return new SM2().decryptToUtf8(privateKeyHex, ciphertext, mode);
+        return DEFAULT.decryptToUtf8(privateKeyHex, ciphertext, mode);
     }
 
     public static String decryptToUtf8(String privateKeyHex, String ciphertext, SM2CipherMode mode) {
-        return new SM2().decryptToUtf8(privateKeyHex, ciphertext, mode);
+        return DEFAULT.decryptToUtf8(privateKeyHex, ciphertext, mode);
     }
 
     public static String decryptToString(String privateKeyHex, byte[] ciphertext, Charset charset, SM2CipherMode mode) {
-        return new SM2().decryptToString(privateKeyHex, ciphertext, charset, mode);
+        return DEFAULT.decryptToString(privateKeyHex, ciphertext, charset, mode);
     }
 
     public static byte[] sign(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return new SM2().sign(privateKeyHex, message, options);
+        return DEFAULT.sign(privateKeyHex, message, options);
     }
 
     public static byte[] sign(String privateKeyHex, String message, SM2SignOptions options) {
-        return new SM2().sign(privateKeyHex, message, options);
+        return DEFAULT.sign(privateKeyHex, message, options);
     }
 
     public static byte[] sign(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
-        return new SM2().sign(privateKeyHex, message, charset, options);
+        return DEFAULT.sign(privateKeyHex, message, charset, options);
     }
 
     public static String signHex(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return new SM2().signHex(privateKeyHex, message, options);
+        return DEFAULT.signHex(privateKeyHex, message, options);
     }
 
     public static String signHex(String privateKeyHex, String message, SM2SignOptions options) {
-        return new SM2().signHex(privateKeyHex, message, options);
+        return DEFAULT.signHex(privateKeyHex, message, options);
     }
 
     public static String signHex(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
-        return new SM2().signHex(privateKeyHex, message, charset, options);
+        return DEFAULT.signHex(privateKeyHex, message, charset, options);
     }
 
     public static String signBase64(String privateKeyHex, byte[] message, SM2SignOptions options) {
-        return new SM2().signBase64(privateKeyHex, message, options);
+        return DEFAULT.signBase64(privateKeyHex, message, options);
     }
 
     public static String signBase64(String privateKeyHex, String message, SM2SignOptions options) {
-        return new SM2().signBase64(privateKeyHex, message, options);
+        return DEFAULT.signBase64(privateKeyHex, message, options);
     }
 
     public static String signBase64(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
-        return new SM2().signBase64(privateKeyHex, message, charset, options);
+        return DEFAULT.signBase64(privateKeyHex, message, charset, options);
     }
 
     public static byte[] signWithoutZ(String privateKeyHex, byte[] message, SM2SignatureFormat signatureFormat) {
-        return new SM2().signWithoutZ(privateKeyHex, message, signatureFormat);
+        return DEFAULT.signWithoutZ(privateKeyHex, message, signatureFormat);
     }
 
     public static byte[] signDigest(String privateKeyHex, byte[] eHash, SM2SignatureFormat signatureFormat) {
-        return new SM2().signDigest(privateKeyHex, eHash, signatureFormat);
+        return DEFAULT.signDigest(privateKeyHex, eHash, signatureFormat);
     }
 
     public static byte[] signDigest(
@@ -207,23 +321,23 @@ public final class SM2Util {
     }
 
     public static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
-        return new SM2().verify(publicKeyHex, message, signature, options);
+        return DEFAULT.verify(publicKeyHex, message, signature, options);
     }
 
     public static boolean verify(String publicKeyHex, byte[] message, String signature, SM2VerifyOptions options) {
-        return new SM2().verify(publicKeyHex, message, signature, options);
+        return DEFAULT.verify(publicKeyHex, message, signature, options);
     }
 
     public static boolean verify(String publicKeyHex, String message, byte[] signature, SM2VerifyOptions options) {
-        return new SM2().verify(publicKeyHex, message, signature, options);
+        return DEFAULT.verify(publicKeyHex, message, signature, options);
     }
 
     public static boolean verify(String publicKeyHex, String message, Charset charset, byte[] signature, SM2VerifyOptions options) {
-        return new SM2().verify(publicKeyHex, message, charset, signature, options);
+        return DEFAULT.verify(publicKeyHex, message, charset, signature, options);
     }
 
     public static boolean verify(String publicKeyHex, String message, String signature, SM2VerifyOptions options) {
-        return new SM2().verify(publicKeyHex, message, signature, options);
+        return DEFAULT.verify(publicKeyHex, message, signature, options);
     }
 
     public static boolean verifyWithoutZ(
@@ -231,31 +345,31 @@ public final class SM2Util {
         byte[] message,
         byte[] signature,
         SM2SignatureInputFormat signatureFormat) {
-        return new SM2().verifyWithoutZ(publicKeyHex, message, signature, signatureFormat);
+        return DEFAULT.verifyWithoutZ(publicKeyHex, message, signature, signatureFormat);
     }
 
     public static boolean verifyDigest(String publicKeyHex, byte[] eHash, byte[] derSignature) {
-        return new SM2().verifyDigest(publicKeyHex, eHash, derSignature);
+        return DEFAULT.verifyDigest(publicKeyHex, eHash, derSignature);
     }
 
     public static byte[] computeZ(String userId, String publicKeyHex) {
-        return new SM2().computeZ(userId, publicKeyHex);
+        return DEFAULT.computeZ(userId, publicKeyHex);
     }
 
     public static byte[] computeE(String publicKeyHex, byte[] message, String userId, boolean skipZComputation) {
-        return new SM2().computeE(publicKeyHex, message, userId, skipZComputation);
+        return DEFAULT.computeE(publicKeyHex, message, userId, skipZComputation);
     }
 
     public static byte[] computeE(String publicKeyHex, String message, Charset charset, String userId, boolean skipZComputation) {
-        return new SM2().computeE(publicKeyHex, message, charset, userId, skipZComputation);
+        return DEFAULT.computeE(publicKeyHex, message, charset, userId, skipZComputation);
     }
 
     public static byte[] computeEWithoutZ(byte[] message) {
-        return new SM2().computeEWithoutZ(message);
+        return DEFAULT.computeEWithoutZ(message);
     }
 
     public static byte[] computeEWithoutZ(String message, Charset charset) {
-        return new SM2().computeEWithoutZ(message, charset);
+        return DEFAULT.computeEWithoutZ(message, charset);
     }
 
     public static byte[] keyExchange(
@@ -264,7 +378,7 @@ public final class SM2Util {
         String peerStaticPublicKeyHex,
         String peerEphemeralPublicKeyHex,
         SM2KeyExchangeOptions options) {
-        return new SM2().keyExchange(
+        return DEFAULT.keyExchange(
             selfStaticPrivateKeyHex,
             selfEphemeralPrivateKeyHex,
             peerStaticPublicKeyHex,
@@ -278,7 +392,7 @@ public final class SM2Util {
         String peerStaticPublicKeyHex,
         String peerEphemeralPublicKeyHex,
         SM2KeyExchangeOptions options) {
-        return new SM2().keyExchangeWithConfirmation(
+        return DEFAULT.keyExchangeWithConfirmation(
             selfStaticPrivateKeyHex,
             selfEphemeralPrivateKeyHex,
             peerStaticPublicKeyHex,
@@ -287,6 +401,6 @@ public final class SM2Util {
     }
 
     public static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {
-        return new SM2().confirmResponder(expectedS2, confirmationTag);
+        return DEFAULT.confirmResponder(expectedS2, confirmationTag);
     }
 }

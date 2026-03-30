@@ -270,5 +270,15 @@ class SM2UtilTest {
         assertArrayEquals(message, SM2Util.decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2));
         assertTrue(SM2Util.verifyWithoutZ(keyPair.publicKey(), message, signature, SM2SignatureInputFormat.RAW));
     }
-}
 
+    @Test
+    void gmkitxStyleAliasesShouldRoundTripCommonFlow() {
+        SM2KeyPair keyPair = SM2Util.sm2GenerateKeyPair(false);
+        byte[] message = Texts.utf8("gmkitx-sm2-alias");
+        byte[] ciphertext = SM2Util.sm2Encrypt(keyPair.publicKey(), message, SM2CipherMode.C1C3C2);
+        byte[] signature = SM2Util.sm2Sign(keyPair.privateKey(), message);
+
+        assertArrayEquals(message, SM2Util.sm2Decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2));
+        assertTrue(SM2Util.sm2Verify(keyPair.publicKey(), message, signature));
+    }
+}
