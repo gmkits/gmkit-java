@@ -34,5 +34,12 @@ class SM3UtilTest {
             SM3Util.digestHex("abc"));
         assertArrayEquals(sm3.hmac(Texts.utf8("secret"), "hello"), SM3Util.hmac(Texts.utf8("secret"), "hello"));
     }
-}
 
+    @Test
+    void gmkitxStyleAliasesShouldMatchExistingApis() {
+        byte[] key = Texts.utf8("secret");
+
+        assertArrayEquals(SM3Util.digest("abc"), SM3Util.sm3Digest("abc"));
+        assertArrayEquals(SM3Util.hmac(key, "hello"), SM3Util.sm3Hmac(key, "hello"));
+    }
+}

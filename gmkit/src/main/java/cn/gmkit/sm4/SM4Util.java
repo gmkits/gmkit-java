@@ -13,11 +13,61 @@ import java.nio.charset.Charset;
  */
 public final class SM4Util {
 
+    private static final SM4 DEFAULT = new SM4();
+
     private SM4Util() {
     }
 
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM4 加密入口。
+     *
+     * @param key     16 字节密钥
+     * @param data    明文字节数组
+     * @param options 加密配置
+     * @return 密文结果
+     */
+    public static SM4CipherResult sm4Encrypt(byte[] key, byte[] data, SM4Options options) {
+        return encrypt(key, data, options);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM4 加密入口。
+     *
+     * @param key     16 字节密钥
+     * @param data    明文字符串
+     * @param options 加密配置
+     * @return 密文结果
+     */
+    public static SM4CipherResult sm4Encrypt(byte[] key, String data, SM4Options options) {
+        return encrypt(key, data, options);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM4 解密入口。
+     *
+     * @param key     16 字节密钥
+     * @param result  密文结果
+     * @param options 解密配置
+     * @return 明文字节数组
+     */
+    public static byte[] sm4Decrypt(byte[] key, SM4CipherResult result, SM4Options options) {
+        return decrypt(key, result, options);
+    }
+
+    /**
+     * mumu 2026-03-30：对齐 gmkitx 的前缀式 SM4 解密入口。
+     *
+     * @param key        16 字节密钥
+     * @param ciphertext 密文字节数组
+     * @param options    解密配置
+     * @return 明文字节数组
+     */
+    public static byte[] sm4Decrypt(byte[] key, byte[] ciphertext, SM4Options options) {
+        return decrypt(key, ciphertext, options);
+    }
+
     public static byte[] generateKey() {
-        return new SM4().generateKey();
+        return DEFAULT.generateKey();
     }
 
     public static byte[] generateKey(GmSecurityContext securityContext) {
@@ -25,7 +75,7 @@ public final class SM4Util {
     }
 
     public static String generateKeyHex() {
-        return new SM4().generateKeyHex();
+        return DEFAULT.generateKeyHex();
     }
 
     public static String generateKeyHex(GmSecurityContext securityContext) {
@@ -33,50 +83,50 @@ public final class SM4Util {
     }
 
     public static SM4CipherResult encryptHex(String keyHex, String data, SM4Options options) {
-        return new SM4().encryptHex(keyHex, data, options);
+        return DEFAULT.encryptHex(keyHex, data, options);
     }
 
     public static SM4CipherResult encryptHex(String keyHex, byte[] data, SM4Options options) {
-        return new SM4().encryptHex(keyHex, data, options);
+        return DEFAULT.encryptHex(keyHex, data, options);
     }
 
     public static SM4CipherResult encrypt(byte[] key, byte[] data, SM4Options options) {
-        return new SM4().encrypt(key, data, options);
+        return DEFAULT.encrypt(key, data, options);
     }
 
     public static SM4CipherResult encrypt(byte[] key, String data, SM4Options options) {
-        return new SM4().encrypt(key, data, options);
+        return DEFAULT.encrypt(key, data, options);
     }
 
     public static SM4CipherResult encrypt(byte[] key, String data, Charset charset, SM4Options options) {
-        return new SM4().encrypt(key, data, charset, options);
+        return DEFAULT.encrypt(key, data, charset, options);
     }
 
     public static byte[] decryptHex(String keyHex, String ciphertextHex, SM4Options options) {
-        return new SM4().decryptHex(keyHex, ciphertextHex, options);
+        return DEFAULT.decryptHex(keyHex, ciphertextHex, options);
     }
 
     public static String decryptToUtf8(byte[] key, byte[] ciphertext, SM4Options options) {
-        return new SM4().decryptToUtf8(key, ciphertext, options);
+        return DEFAULT.decryptToUtf8(key, ciphertext, options);
     }
 
     public static String decryptToUtf8(byte[] key, SM4CipherResult result, SM4Options options) {
-        return new SM4().decryptToUtf8(key, result, options);
+        return DEFAULT.decryptToUtf8(key, result, options);
     }
 
     public static String decryptToString(byte[] key, byte[] ciphertext, Charset charset, SM4Options options) {
-        return new SM4().decryptToString(key, ciphertext, charset, options);
+        return DEFAULT.decryptToString(key, ciphertext, charset, options);
     }
 
     public static String decryptToString(byte[] key, SM4CipherResult result, Charset charset, SM4Options options) {
-        return new SM4().decryptToString(key, result, charset, options);
+        return DEFAULT.decryptToString(key, result, charset, options);
     }
 
     public static byte[] decrypt(byte[] key, SM4CipherResult result, SM4Options options) {
-        return new SM4().decrypt(key, result, options);
+        return DEFAULT.decrypt(key, result, options);
     }
 
     public static byte[] decrypt(byte[] key, byte[] ciphertext, SM4Options options) {
-        return new SM4().decrypt(key, ciphertext, options);
+        return DEFAULT.decrypt(key, ciphertext, options);
     }
 }

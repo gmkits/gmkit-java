@@ -110,14 +110,77 @@ String hash = SM3Util.digestHex("Hello GMKit!");
 byte[] key = SM4Util.generateKey();
 ```
 
+### 与 gmkit / gmkitx 对齐的前缀式别名
+
+为方便和 `gmkits/gmkit` 的函数式暴露习惯对齐，Java 版补充了语义更直接的前缀式入口；旧 API 保持不变。
+
+```java
+import cn.gmkit.core.SM2CipherMode;
+import cn.gmkit.sm2.SM2KeyPair;
+import cn.gmkit.sm2.SM2Util;
+import cn.gmkit.sm3.SM3Util;
+import cn.gmkit.sm4.SM4CipherResult;
+import cn.gmkit.sm4.SM4Options;
+import cn.gmkit.sm4.SM4Util;
+
+SM2KeyPair keyPair = SM2Util.sm2GenerateKeyPair(false);
+byte[] cipher = SM2Util.sm2Encrypt(keyPair.publicKey(), "Hello GMKit!".getBytes(StandardCharsets.UTF_8), SM2CipherMode.C1C3C2);
+byte[] plain = SM2Util.sm2Decrypt(keyPair.privateKey(), cipher, SM2CipherMode.C1C3C2);
+byte[] sign = SM2Util.sm2Sign(keyPair.privateKey(), plain);
+boolean ok = SM2Util.sm2Verify(keyPair.publicKey(), plain, sign);
+
+byte[] digest = SM3Util.sm3Digest("Hello GMKit!");
+byte[] mac = SM3Util.sm3Hmac("secret".getBytes(StandardCharsets.UTF_8), "Hello GMKit!");
+
+SM4CipherResult sm4Cipher = SM4Util.sm4Encrypt(key, "payload", SM4Options.builder().build());
+byte[] sm4Plain = SM4Util.sm4Decrypt(key, sm4Cipher, SM4Options.builder().build());
+```
+
+### 后端混合加密封装（SM2 + SM4）
+
+后端常见场景是：用 `SM2` 保护一次性 `SM4` 会话密钥，再用 `SM4` 加密业务数据。现在可以直接使用统一封装，避免业务层手工拼装多个字段。
+
+```java
+import cn.gmkit.integration.SM2Sm4Hybrid;
+import cn.gmkit.integration.SM2Sm4HybridPayload;
+import cn.gmkit.sm2.SM2;
+import cn.gmkit.sm2.SM2KeyPair;
+
+SM2 sm2 = new SM2();
+SM2KeyPair keyPair = sm2.generateKeyPair(false);
+SM2Sm4Hybrid hybrid = new SM2Sm4Hybrid();
+
+SM2Sm4HybridPayload payload = hybrid.encrypt(keyPair.publicKey(), "后端统一混合加密");
+String plain = hybrid.decryptToUtf8(keyPair.privateKey(), payload);
+```
+
+默认情况下该封装会使用 `SM4-GCM + 随机 nonce + 16 字节 tag`，并把 `encryptedKey / ciphertext / iv / aad / tag / mode / padding`
+统一放入 `SM2Sm4HybridPayload`，更适合后端服务间传输或落库。
+
 ## 迁移说明
 
 - `SM2`、`SM3`、`SM4` 为对象式主入口，适合通过 `new` 绑定上下文或复用实例。
 - `SM2Util`、`SM3Util`、`SM4Util` 为静态工具入口，适合工具类调用风格。
+- `SM2Util.sm2GenerateKeyPair / sm2Encrypt / sm2Decrypt / sm2Sign / sm2Verify`
+  与 `SM3Util.sm3Digest / sm3Hmac`、`SM4Util.sm4Encrypt / sm4Decrypt` 为前缀式兼容入口，便于和
+  `gmkits/gmkit` 的函数命名保持一致。
 - `SM2EncryptOptions`、`SM2DecryptOptions`、`SM4DecryptOptions` 已移除：
     - SM2 加解密改为默认重载或直接传 `SM2CipherMode`
     - SM4 解密和加密统一使用 `SM4Options`，AEAD tag 通过 `tag(...)` 传入
 - 所有公开命名统一使用大写缩写 `SM*` 风格，例如 `SM2KeyPair`、`SM4Options`。
+
+## 编码与格式工具
+
+如果需要在后端侧统一处理 Hex / Base64 输入输出，可直接使用 `ByteEncodings`、`InputFormat`、`OutputFormat`：
+
+```java
+import cn.gmkit.core.ByteEncodings;
+import cn.gmkit.core.InputFormat;
+import cn.gmkit.core.OutputFormat;
+
+String base64 = ByteEncodings.encode("abc".getBytes(StandardCharsets.UTF_8), OutputFormat.BASE64);
+byte[] decoded = ByteEncodings.decode(base64, InputFormat.BASE64, "payload");
+```
 
 ## 仓库结构
 
