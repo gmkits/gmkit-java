@@ -89,6 +89,28 @@ class SM2ErrorHandlingTest {
     }
 
     @Test
+    void encryptShouldRejectEmptyPlaintextBytes() {
+        SM2KeyPair keyPair = sm2.generateKeyPair(false);
+
+        GmkitException exception = assertThrows(
+            GmkitException.class,
+            () -> sm2.encrypt(keyPair.publicKey(), new byte[0], SM2CipherMode.C1C3C2));
+
+        assertEquals(Messages.emptyValue("SM2 plaintext"), exception.getMessage());
+    }
+
+    @Test
+    void encryptShouldRejectEmptyPlaintextString() {
+        SM2KeyPair keyPair = sm2.generateKeyPair(false);
+
+        GmkitException exception = assertThrows(
+            GmkitException.class,
+            () -> sm2.encrypt(keyPair.publicKey(), "", Texts.UTF_8, SM2CipherMode.C1C3C2));
+
+        assertEquals(Messages.emptyValue("SM2 plaintext"), exception.getMessage());
+    }
+
+    @Test
     void decryptShouldRejectShortCiphertext() {
         SM2KeyPair keyPair = sm2.generateKeyPair(false);
 
@@ -97,5 +119,25 @@ class SM2ErrorHandlingTest {
             () -> sm2.decrypt(keyPair.privateKey(), new byte[10], SM2CipherMode.C1C3C2));
 
         assertTrue(exception.getMessage().contains("expected raw C1||C3||C2"));
+    }
+
+    @Test
+    void verifyShouldThrowForInvalidPublicKey() {
+        GmkitException exception = assertThrows(
+            GmkitException.class,
+            () -> sm2.verify("04abcd", Texts.utf8("hello"), new byte[64], null));
+
+        assertTrue(exception.getMessage().contains("public key"));
+    }
+
+    @Test
+    void verifyShouldThrowForInvalidSignatureString() {
+        SM2KeyPair keyPair = sm2.generateKeyPair(false);
+
+        GmkitException exception = assertThrows(
+            GmkitException.class,
+            () -> sm2.verify(keyPair.publicKey(), Texts.utf8("hello"), "not-a-signature", null));
+
+        assertEquals(Messages.invalidHexOrBase64("signature"), exception.getMessage());
     }
 }

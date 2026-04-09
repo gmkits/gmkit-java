@@ -21,13 +21,13 @@ class SM2StandardVectorsTest {
     private final SM2 sm2 = new SM2();
 
     @Test
-    void fixedLegacyVectorShouldVerify() {
+    void fixedDefaultUserIdVectorShouldVerify() {
         assertTrue(sm2.verify(
             FIXED_PUBLIC_KEY,
             FIXED_MESSAGE,
             FIXED_SIGNATURE_WITH_Z,
             SM2VerifyOptions.builder()
-                .userId(SM2.LEGACY_USER_ID)
+                .userId(SM2.DEFAULT_USER_ID)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
     }
@@ -118,7 +118,7 @@ class SM2StandardVectorsTest {
     void computeZShouldRemainStableForFixedPublicKey() {
         assertEquals(
             "e1e7bae6607d915da177536ff7f800b5d1c523572424653b0d7ab9647a763966",
-            HexCodec.encode(sm2.computeZ(SM2.LEGACY_USER_ID, FIXED_PUBLIC_KEY)));
+            HexCodec.encode(sm2.computeZ(SM2.DEFAULT_USER_ID, FIXED_PUBLIC_KEY)));
     }
 
     @Test

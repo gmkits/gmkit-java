@@ -6,9 +6,9 @@ import java.security.Provider;
 import java.security.Security;
 
 /**
- * @author mumu
- * @description BouncyCastle Provider辅助工具类，用于管理加密提供者
- * @since 1.0.0
+ * BouncyCastle Provider 辅助工具。
+ * <p>
+ * 负责创建、探测与按需注册 BC Provider，供 SM2、SM3、SM4 模块共享使用。
  */
 public final class BcProviders {
 
@@ -18,27 +18,29 @@ public final class BcProviders {
     }
 
     /**
-     * 创建一个新的BouncyCastle Provider实例
+     * 创建一个新的 BouncyCastle Provider 实例。
      *
-     * @return BouncyCastle Provider实例
+     * @return 新的 BC Provider
      */
     public static Provider create() {
         return new BouncyCastleProvider();
     }
 
     /**
-     * 获取已注册的BouncyCastle Provider
+     * 获取当前 JVM 中已注册的 BouncyCastle Provider。
      *
-     * @return 如果已注册则返回Provider实例，否则返回null
+     * @return 已注册的 BC Provider；未注册时返回 {@code null}
      */
     public static Provider getIfPresent() {
         return Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
     }
 
     /**
-     * 获取默认的Provider，如果未注册则创建新实例
+     * 获取默认 Provider。
+     * <p>
+     * 如果当前 JVM 尚未注册 BC，则返回一个新的未注册实例。
      *
-     * @return BouncyCastle Provider实例
+     * @return 可用于当前调用的 BC Provider
      */
     public static Provider defaultProvider() {
         Provider provider = getIfPresent();
@@ -46,9 +48,9 @@ public final class BcProviders {
     }
 
     /**
-     * 确保BouncyCastle Provider已注册，如果未注册则自动注册
+     * 确保默认的 BouncyCastle Provider 已注册。
      *
-     * @return 已注册的BouncyCastle Provider实例
+     * @return 已注册的 BC Provider
      */
     public static Provider ensureRegistered() {
         Provider provider = getIfPresent();
@@ -68,10 +70,10 @@ public final class BcProviders {
     }
 
     /**
-     * 如果需要则注册Provider
+     * 在必要时注册指定 Provider。
      *
-     * @param provider 待注册的Provider实例
-     * @return 已注册的Provider实例
+     * @param provider 待注册 Provider
+     * @return JVM 中最终可用的 Provider 实例
      */
     public static Provider registerIfNeeded(Provider provider) {
         Provider existing = Security.getProvider(provider.getName());
@@ -89,5 +91,4 @@ public final class BcProviders {
         }
     }
 }
-
 

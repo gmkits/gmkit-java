@@ -43,7 +43,7 @@ final class SM2Domain {
     static SM2KeyExchangeOptions keyExchangeOptions(SM2KeyExchangeOptions options) {
         SM2KeyExchangeOptions resolved = Checks.defaultIfNull(options, SM2KeyExchangeOptions.builder().build());
         if (resolved.keyBits() <= 0) {
-            throw new GmkitException("SM2 key exchange keyBits must be positive");
+            throw new GmkitException(Messages.positiveValue("SM2 key exchange keyBits"));
         }
         return resolved;
     }
@@ -52,7 +52,7 @@ final class SM2Domain {
         String resolvedUserId = Checks.defaultIfNull(userId, SM2.DEFAULT_USER_ID);
         byte[] bytes = Texts.utf8(resolvedUserId);
         if (bytes.length >= 8192) {
-            throw new GmkitException("SM2 user ID must be less than 2^16 bits long");
+            throw new GmkitException(Messages.sm2UserIdTooLong());
         }
         return bytes;
     }

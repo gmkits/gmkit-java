@@ -35,6 +35,18 @@ public final class Bytes {
     }
 
     /**
+     * 验证字节数组非空且至少包含一个字节。
+     *
+     * @param input 待验证的字节数组
+     * @param label 错误提示标签
+     * @return 输入的字节数组
+     * @throws GmkitException 如果字节数组为 {@code null} 或长度为 0
+     */
+    public static byte[] requireNonEmpty(byte[] input, String label) {
+        return Checks.requireNonEmpty(input, label);
+    }
+
+    /**
      * 验证字节数组长度是否符合要求
      *
      * @param input          待验证的字节数组

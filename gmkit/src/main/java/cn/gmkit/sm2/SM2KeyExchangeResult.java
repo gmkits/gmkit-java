@@ -5,9 +5,9 @@ import cn.gmkit.core.Bytes;
 import cn.gmkit.core.HexCodec;
 
 /**
- * @author mumu
- * @description SM2密钥交换结果封装类
- * @since 1.0.0
+ * SM2 密钥交换结果。
+ * <p>
+ * 同时封装共享密钥以及可选的 S1、S2 确认标签。
  */
 public final class SM2KeyExchangeResult {
 
@@ -16,7 +16,7 @@ public final class SM2KeyExchangeResult {
     private final byte[] s2;
 
     /**
-     * 构造密钥交换结果对象
+     * 创建一个密钥交换结果对象。
      *
      * @param key 协商出的共享密钥
      * @param s1  己方确认标签
@@ -29,85 +29,84 @@ public final class SM2KeyExchangeResult {
     }
 
     /**
-     * 获取协商出的密钥
+     * 获取共享密钥。
      *
-     * @return 密钥字节数组的克隆
+     * @return 密钥字节数组的防御性拷贝
      */
     public byte[] key() {
         return Bytes.clone(key);
     }
 
     /**
-     * 获取己方确认标签S1
+     * 获取己方确认标签 S1。
      *
-     * @return S1字节数组的克隆
+     * @return S1 字节数组的防御性拷贝
      */
     public byte[] s1() {
         return Bytes.clone(s1);
     }
 
     /**
-     * 获取对方确认标签S2
+     * 获取对方确认标签 S2。
      *
-     * @return S2字节数组的克隆
+     * @return S2 字节数组的防御性拷贝
      */
     public byte[] s2() {
         return Bytes.clone(s2);
     }
 
     /**
-     * 判断是否存在S1
+     * 判断是否存在 S1。
      *
-     * @return 如果存在S1返回true，否则返回false
+     * @return 存在 S1 时返回 {@code true}
      */
     public boolean hasS1() {
         return s1 != null && s1.length > 0;
     }
 
     /**
-     * 判断是否存在S2
+     * 判断是否存在 S2。
      *
-     * @return 如果存在S2返回true，否则返回false
+     * @return 存在 S2 时返回 {@code true}
      */
     public boolean hasS2() {
         return s2 != null && s2.length > 0;
     }
 
     /**
-     * 获取密钥的十六进制字符串
+     * 获取共享密钥的十六进制字符串。
      *
-     * @return 密钥的十六进制表示
+     * @return 十六进制共享密钥
      */
     public String keyHex() {
         return HexCodec.encode(key);
     }
 
     /**
-     * 获取密钥的Base64字符串
+     * 获取共享密钥的 Base64 字符串。
      *
-     * @return 密钥的Base64表示
+     * @return Base64 共享密钥
      */
     public String keyBase64() {
         return Base64Codec.encode(key);
     }
 
     /**
-     * 获取S1的十六进制字符串
+     * 获取 S1 的十六进制字符串。
      *
-     * @return S1的十六进制表示，如果不存在则返回null
+     * @return S1 的十六进制表示；不存在时返回 {@code null}
      */
     public String s1Hex() {
         return hasS1() ? HexCodec.encode(s1) : null;
     }
 
     /**
-     * 获取S2的十六进制字符串
+     * 获取 S2 的十六进制字符串。
      *
-     * @return S2的十六进制表示，如果不存在则返回null
+     * @return S2 的十六进制表示；不存在时返回 {@code null}
      */
     public String s2Hex() {
         return hasS2() ? HexCodec.encode(s2) : null;
     }
 }
-
 

@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description SM4 加密算法的填充模式枚举
- * @since 1.0.0
+ * SM4 分组填充模式。
  */
 public enum SM4Padding {
     /**
@@ -19,6 +17,5 @@ public enum SM4Padding {
      */
     ZERO
 }
-
 
 

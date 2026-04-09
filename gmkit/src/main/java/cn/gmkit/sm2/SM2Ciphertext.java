@@ -4,9 +4,9 @@ import cn.gmkit.core.Bytes;
 import cn.gmkit.core.SM2CipherMode;
 
 /**
- * @author mumu
- * @description SM2密文数据结构封装类
- * @since 1.0.0
+ * SM2 原始密文分段视图。
+ * <p>
+ * 将原始密文拆分为 C1、C2、C3 三段并保留当前排列模式。
  */
 public final class SM2Ciphertext {
 
@@ -16,11 +16,11 @@ public final class SM2Ciphertext {
     private final SM2CipherMode mode;
 
     /**
-     * 构造SM2密文对象
+     * 创建一个 SM2 密文分段对象。
      *
-     * @param c1   椭圆曲线点（公钥部分）
-     * @param c2   密文数据
-     * @param c3   消息摘要值
+     * @param c1 椭圆曲线点 C1
+     * @param c2 密文段 C2
+     * @param c3 摘要段 C3
      * @param mode 密文排列模式
      */
     public SM2Ciphertext(byte[] c1, byte[] c2, byte[] c3, SM2CipherMode mode) {
@@ -31,34 +31,34 @@ public final class SM2Ciphertext {
     }
 
     /**
-     * 获取C1部分（椭圆曲线点）
+     * 获取 C1 段。
      *
-     * @return C1字节数组的克隆
+     * @return C1 字节数组的防御性拷贝
      */
     public byte[] c1() {
         return Bytes.clone(c1);
     }
 
     /**
-     * 获取C2部分（密文数据）
+     * 获取 C2 段。
      *
-     * @return C2字节数组的克隆
+     * @return C2 字节数组的防御性拷贝
      */
     public byte[] c2() {
         return Bytes.clone(c2);
     }
 
     /**
-     * 获取C3部分（消息摘要）
+     * 获取 C3 段。
      *
-     * @return C3字节数组的克隆
+     * @return C3 字节数组的防御性拷贝
      */
     public byte[] c3() {
         return Bytes.clone(c3);
     }
 
     /**
-     * 获取密文排列模式
+     * 获取密文排列模式。
      *
      * @return 密文排列模式
      */
@@ -66,5 +66,4 @@ public final class SM2Ciphertext {
         return mode;
     }
 }
-
 

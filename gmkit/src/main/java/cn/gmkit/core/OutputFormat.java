@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description 输出格式枚举，指定加密/签名结果的编码方式
- * @since 1.0.0
+ * 输出字符串的编码格式。
  */
 public enum OutputFormat {
     /**
@@ -15,5 +13,4 @@ public enum OutputFormat {
      */
     BASE64
 }
-
 

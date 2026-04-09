@@ -4,42 +4,52 @@ import cn.gmkit.core.HexCodec;
 import cn.gmkit.core.Texts;
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class SM3UtilTest {
 
-    @Test
-    void digestShouldMatchKnownVector() {
-        assertEquals(
-            "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0",
-            SM3Util.digestHex("abc"));
-    }
+    private static final String MESSAGE = "hello";
+    private static final byte[] MESSAGE_BYTES = Texts.utf8(MESSAGE);
+    private static final byte[] KEY = Texts.utf8("secret");
 
     @Test
-    void hmacOverloadsShouldStayConsistent() {
-        byte[] key = Texts.utf8("secret");
-        byte[] binary = SM3Util.hmac(key, Texts.utf8("hello"));
-        byte[] text = SM3Util.hmac(key, "hello");
-
-        assertArrayEquals(binary, text);
-        assertEquals(32, binary.length);
-        assertNotEquals(HexCodec.encode(SM3Util.digest("hello")), HexCodec.encode(binary));
-    }
-
-    @Test
-    void utilAliasShouldRemainUsable() {
+    void digestMethodsShouldMatchObjectEntryPoint() {
         SM3 sm3 = new SM3();
-        assertEquals(
-            "66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0",
-            SM3Util.digestHex("abc"));
-        assertArrayEquals(sm3.hmac(Texts.utf8("secret"), "hello"), SM3Util.hmac(Texts.utf8("secret"), "hello"));
+
+        assertArrayEquals(sm3.digest(MESSAGE_BYTES), SM3Util.digest(MESSAGE_BYTES));
+        assertArrayEquals(sm3.digest(MESSAGE), SM3Util.digest(MESSAGE));
+        assertEquals(sm3.digestHex(MESSAGE), SM3Util.digestHex(MESSAGE));
+        assertEquals(sm3.digestBase64(MESSAGE), SM3Util.digestBase64(MESSAGE));
     }
 
     @Test
-    void gmkitxStyleAliasesShouldMatchExistingApis() {
-        byte[] key = Texts.utf8("secret");
+    void hmacMethodsShouldMatchObjectEntryPoint() {
+        SM3 sm3 = new SM3();
 
-        assertArrayEquals(SM3Util.digest("abc"), SM3Util.sm3Digest("abc"));
-        assertArrayEquals(SM3Util.hmac(key, "hello"), SM3Util.sm3Hmac(key, "hello"));
+        assertArrayEquals(sm3.hmac(KEY, MESSAGE_BYTES), SM3Util.hmac(KEY, MESSAGE_BYTES));
+        assertArrayEquals(sm3.hmac(KEY, MESSAGE), SM3Util.hmac(KEY, MESSAGE));
+        assertEquals(sm3.hmacHex(KEY, MESSAGE), SM3Util.hmacHex(KEY, MESSAGE));
+        assertEquals(sm3.hmacBase64(KEY, MESSAGE), SM3Util.hmacBase64(KEY, MESSAGE));
+        assertNotEquals(HexCodec.encode(SM3Util.digest(MESSAGE)), HexCodec.encode(SM3Util.hmac(KEY, MESSAGE)));
+    }
+
+    @Test
+    void charsetAwareUtilMethodsShouldMatchObjectEntryPoint() {
+        SM3 sm3 = new SM3();
+
+        assertArrayEquals(
+            sm3.digest(MESSAGE, StandardCharsets.UTF_16LE),
+            SM3Util.digest(MESSAGE, StandardCharsets.UTF_16LE));
+        assertEquals(
+            sm3.digestHex(MESSAGE, StandardCharsets.UTF_16LE),
+            SM3Util.digestHex(MESSAGE, StandardCharsets.UTF_16LE));
+        assertArrayEquals(
+            sm3.hmac(KEY, MESSAGE, StandardCharsets.UTF_16LE),
+            SM3Util.hmac(KEY, MESSAGE, StandardCharsets.UTF_16LE));
+        assertEquals(
+            sm3.hmacBase64(KEY, MESSAGE, StandardCharsets.UTF_16LE),
+            SM3Util.hmacBase64(KEY, MESSAGE, StandardCharsets.UTF_16LE));
     }
 }

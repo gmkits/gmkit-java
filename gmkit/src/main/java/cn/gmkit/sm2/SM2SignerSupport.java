@@ -1,6 +1,7 @@
 package cn.gmkit.sm2;
 
 import cn.gmkit.core.*;
+import cn.gmkit.sm3.SM3Util;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -52,19 +53,20 @@ final class SM2SignerSupport {
             SM2SignatureFormat resolvedFormat = Checks.defaultIfNull(signatureFormat, SM2SignatureFormat.RAW);
             return resolvedFormat == SM2SignatureFormat.DER ? der : SM2Signatures.derToRaw(der);
         } catch (CryptoException ex) {
-            throw new GmkitException("SM2 signing failed", ex);
+            throw new GmkitException(Messages.sm2SigningFailed(), ex);
         }
     }
 
     static boolean verify(String publicKeyHex, byte[] message, byte[] signature, SM2VerifyOptions options) {
         SM2VerifyOptions resolved = Checks.defaultIfNull(options, SM2VerifyOptions.builder().build());
+        byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
+        byte[] safeSignature = Bytes.requireNonNull(signature, "SM2 signature");
+        ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
         try {
-            byte[] safeMessage = Bytes.requireNonNull(message, "SM2 message");
-            ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
-            byte[] derSignature = SM2Signatures.normalizeToDer(signature, resolved.signatureFormat());
+            byte[] derSignature = SM2Signatures.normalizeToDer(safeSignature, resolved.signatureFormat());
             byte[] eHash = computeE(publicKey.getQ(), safeMessage, resolved.userId(), resolved.skipZComputation());
             return verifyDigest(publicKey, eHash, derSignature);
-        } catch (RuntimeException ex) {
+        } catch (GmkitException ex) {
             return false;
         }
     }
@@ -99,7 +101,7 @@ final class SM2SignerSupport {
         byte[] py = org.bouncycastle.util.BigIntegers.asUnsignedByteArray(
             SM2Domain.CURVE_LENGTH,
             normalizedPoint.getAffineYCoord().toBigInteger());
-        return cn.gmkit.sm3.SM3Support.digest(
+        return SM3Util.digest(
             Bytes.concat(entl, userIdBytes, SM2Domain.CURVE_A, SM2Domain.CURVE_B, SM2Domain.CURVE_GX, SM2Domain.CURVE_GY, px, py));
     }
 
@@ -112,11 +114,11 @@ final class SM2SignerSupport {
         if (skipZComputation) {
             return computeEWithoutZ(safeMessage);
         }
-        return cn.gmkit.sm3.SM3Support.digest(Bytes.concat(computeZ(userId, publicPoint), safeMessage));
+        return SM3Util.digest(Bytes.concat(computeZ(userId, publicPoint), safeMessage));
     }
 
     static byte[] computeEWithoutZ(byte[] message) {
-        return cn.gmkit.sm3.SM3Support.digest(Bytes.requireNonNull(message, "SM2 message"));
+        return SM3Util.digest(Bytes.requireNonNull(message, "SM2 message"));
     }
 
     static boolean confirmResponder(byte[] expectedS2, byte[] confirmationTag) {

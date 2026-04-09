@@ -23,12 +23,12 @@ final class SM2Cryptor {
         ECPublicKeyParameters publicKey = SM2KeyOps.toPublicKeyParameters(publicKeyHex);
         SM2Engine engine = new SM2Engine(SM2Domain.cipherMode(mode).toBcMode());
         CipherParameters parameters = new ParametersWithRandom(publicKey, SM2Domain.context(securityContext).secureRandom());
-        byte[] safeData = Bytes.requireNonNull(data, "SM2 plaintext");
+        byte[] safeData = Bytes.requireNonEmpty(data, "SM2 plaintext");
         try {
             engine.init(true, parameters);
             return engine.processBlock(safeData, 0, safeData.length);
-        } catch (InvalidCipherTextException ex) {
-            throw new GmkitException("SM2 encryption failed: please verify the public key, plaintext and Provider configuration", ex);
+        } catch (InvalidCipherTextException | RuntimeException ex) {
+            throw new GmkitException(cn.gmkit.core.Messages.sm2EncryptionFailed(), ex);
         }
     }
 
@@ -47,8 +47,8 @@ final class SM2Cryptor {
         try {
             engine.init(false, privateKey);
             return engine.processBlock(normalizedCiphertext, 0, normalizedCiphertext.length);
-        } catch (InvalidCipherTextException ex) {
-            throw new GmkitException("SM2 decryption failed: please confirm the private key, ciphertext layout and ASN.1/RAW encoding", ex);
+        } catch (InvalidCipherTextException | RuntimeException ex) {
+            throw new GmkitException(cn.gmkit.core.Messages.sm2DecryptionFailed(), ex);
         }
     }
 

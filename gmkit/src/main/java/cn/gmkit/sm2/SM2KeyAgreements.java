@@ -2,6 +2,7 @@ package cn.gmkit.sm2;
 
 import cn.gmkit.core.Bytes;
 import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.Messages;
 import org.bouncycastle.crypto.agreement.SM2KeyExchange;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.SM2KeyExchangePrivateParameters;
@@ -43,7 +44,7 @@ final class SM2KeyAgreements {
         SM2KeyExchangeOptions options) {
         SM2KeyExchangeOptions resolved = SM2Domain.keyExchangeOptions(options);
         if (resolved.initiator() && (resolved.confirmationTag() == null || resolved.confirmationTag().length == 0)) {
-            throw new GmkitException("Initiator must provide peer confirmation tag for SM2 key exchange");
+            throw new GmkitException(Messages.sm2InitiatorConfirmationTagRequired());
         }
         SM2KeyExchange exchange = new SM2KeyExchange();
         exchange.init(new ParametersWithID(
@@ -66,4 +67,3 @@ final class SM2KeyAgreements {
         return new SM2KeyExchangeResult(result[0], result[1], result[2]);
     }
 }
-

@@ -22,7 +22,7 @@ final class SM4Support {
 
     static int resolveTagLength(SM4CipherMode mode, Integer configuredTagLength) {
         if (mode == SM4CipherMode.GCM) {
-            int resolved = Checks.defaultIfNull(configuredTagLength, Integer.valueOf(16)).intValue();
+            int resolved = Checks.defaultIfNull(configuredTagLength, 16);
             if (resolved < 12 || resolved > 16) {
                 throw new GmkitException(Messages.bilingual(
                     "SM4 GCM tag 长度无效，应为 12 到 16 字节",
@@ -31,7 +31,7 @@ final class SM4Support {
             return resolved;
         }
         if (mode == SM4CipherMode.CCM) {
-            int resolved = Checks.defaultIfNull(configuredTagLength, Integer.valueOf(16)).intValue();
+            int resolved = Checks.defaultIfNull(configuredTagLength, 16);
             if (resolved < 4 || resolved > 16 || (resolved & 1) != 0) {
                 throw new GmkitException(Messages.bilingual(
                     "SM4 CCM tag 长度无效，应为 4 到 16 字节之间的偶数",

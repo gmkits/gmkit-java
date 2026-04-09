@@ -96,7 +96,7 @@ class SM4UtilTest {
     }
 
     @Test
-    void utilAliasShouldRemainUsable() {
+    void utilEntryPointShouldRemainUsable() {
         SM4CipherResult encrypted = SM4Util.encrypt(
             KEY,
             Texts.utf8("compat-api"),
@@ -116,18 +116,5 @@ class SM4UtilTest {
                     .padding(SM4Padding.PKCS7)
                     .iv(IV)
                     .build()));
-    }
-
-    @Test
-    void gmkitxStyleAliasesShouldRoundTrip() {
-        SM4Options options = SM4Options.builder()
-            .mode(SM4CipherMode.CBC)
-            .padding(SM4Padding.PKCS7)
-            .iv(IV)
-            .build();
-
-        SM4CipherResult encrypted = SM4Util.sm4Encrypt(KEY, "gmkitx-sm4-alias", options);
-
-        assertEquals("gmkitx-sm4-alias", Texts.utf8(SM4Util.sm4Decrypt(KEY, encrypted, options)));
     }
 }

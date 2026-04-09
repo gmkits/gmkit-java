@@ -3,9 +3,7 @@ package cn.gmkit.core;
 import org.bouncycastle.crypto.engines.SM2Engine;
 
 /**
- * @author mumu
- * @description SM2加密密文排列模式枚举
- * @since 1.0.0
+ * SM2 原始密文片段排列模式。
  */
 public enum SM2CipherMode {
     /**
@@ -24,14 +22,13 @@ public enum SM2CipherMode {
     }
 
     /**
-     * 转换为BouncyCastle的SM2Engine模式
+     * 转换为 BouncyCastle 的 {@link SM2Engine.Mode}。
      *
-     * @return BouncyCastle的SM2Engine.Mode
+     * @return BC 对应模式
      */
     public SM2Engine.Mode toBcMode() {
         return bcMode;
     }
 }
-
 
 

@@ -16,11 +16,13 @@ import cn.gmkit.sm4.SM4Options;
 import java.nio.charset.Charset;
 
 /**
- * @author mumu
- * @description 面向后端的 SM2 + SM4 混合加密入口，统一封装会话密钥保护、业务密文和必要元数据
- * @since 1.0.0
- *
- * mumu 2026-03-30：默认采用 SM4-GCM + 随机 nonce，前端只需消费结果字段，后端可集中掌握模式细节。
+ * 面向后端场景的 SM2 + SM4 混合加密入口。
+ * <p>
+ * 该类型负责统一封装一次性 SM4 会话密钥生成、SM2 会话密钥保护以及业务密文与元数据的打包逻辑，
+ * 适合服务端接口、消息体落库和跨服务传输等需要固定载荷结构的场景。
+ * <p>
+ * 默认情况下使用 {@code SM4-GCM + 随机 nonce + 16 字节 tag}，
+ * 也可以显式传入 {@link SM4Options} 覆盖模式、IV、AAD 和 tag 长度等参数。
  */
 public final class SM2Sm4Hybrid {
 
@@ -32,28 +34,67 @@ public final class SM2Sm4Hybrid {
     private final SM2 sm2;
     private final SM4 sm4;
 
+    /**
+     * 创建一个使用默认安全上下文的混合加密入口。
+     */
     public SM2Sm4Hybrid() {
         this(null);
     }
 
+    /**
+     * 创建一个绑定指定安全上下文的混合加密入口。
+     *
+     * @param securityContext Provider 和随机源配置；传入 {@code null} 时回退为默认安全上下文
+     */
     public SM2Sm4Hybrid(GmSecurityContext securityContext) {
         this.securityContext = Checks.defaultIfNull(securityContext, GmSecurityContexts.defaults());
         this.sm2 = new SM2(this.securityContext);
         this.sm4 = new SM4(this.securityContext);
     }
 
+    /**
+     * 使用默认混合加密配置加密字节数组。
+     *
+     * @param publicKeyHex SM2 公钥十六进制字符串
+     * @param plaintext    原文字节数组
+     * @return 混合加密载荷
+     */
     public SM2Sm4HybridPayload encrypt(String publicKeyHex, byte[] plaintext) {
         return encrypt(publicKeyHex, plaintext, null);
     }
 
+    /**
+     * 使用默认混合加密配置加密 UTF-8 文本。
+     *
+     * @param publicKeyHex SM2 公钥十六进制字符串
+     * @param plaintext    原文字符串
+     * @return 混合加密载荷
+     */
     public SM2Sm4HybridPayload encrypt(String publicKeyHex, String plaintext) {
         return encrypt(publicKeyHex, plaintext, Texts.UTF_8, null);
     }
 
+    /**
+     * 使用指定字符集与 SM4 选项加密文本。
+     *
+     * @param publicKeyHex SM2 公钥十六进制字符串
+     * @param plaintext    原文字符串
+     * @param charset      字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param options      SM4 配置；传入 {@code null} 时使用默认的 GCM 配置
+     * @return 混合加密载荷
+     */
     public SM2Sm4HybridPayload encrypt(String publicKeyHex, String plaintext, Charset charset, SM4Options options) {
         return encrypt(publicKeyHex, Texts.bytes(plaintext, charset), options);
     }
 
+    /**
+     * 使用指定 SM4 选项加密字节数组。
+     *
+     * @param publicKeyHex SM2 公钥十六进制字符串
+     * @param plaintext    原文字节数组
+     * @param options      SM4 配置；传入 {@code null} 时使用默认的 GCM 配置
+     * @return 混合加密载荷
+     */
     public SM2Sm4HybridPayload encrypt(String publicKeyHex, byte[] plaintext, SM4Options options) {
         Checks.requireNonBlank(publicKeyHex, "SM2 public key");
         byte[] plain = Bytes.requireNonNull(plaintext, "hybrid plaintext");
@@ -71,6 +112,13 @@ public final class SM2Sm4Hybrid {
             resolvedOptions.padding());
     }
 
+    /**
+     * 解密混合加密载荷并返回原文字节数组。
+     *
+     * @param privateKeyHex SM2 私钥十六进制字符串
+     * @param payload       混合加密载荷
+     * @return 原文字节数组
+     */
     public byte[] decrypt(String privateKeyHex, SM2Sm4HybridPayload payload) {
         Checks.requireNonBlank(privateKeyHex, "SM2 private key");
         Checks.requireNonNull(payload, "hybrid payload");
@@ -78,10 +126,25 @@ public final class SM2Sm4Hybrid {
         return sm4.decrypt(sessionKey, payload.ciphertext(), optionsFromPayload(payload));
     }
 
+    /**
+     * 解密混合加密载荷并按 UTF-8 返回明文。
+     *
+     * @param privateKeyHex SM2 私钥十六进制字符串
+     * @param payload       混合加密载荷
+     * @return UTF-8 明文
+     */
     public String decryptToUtf8(String privateKeyHex, SM2Sm4HybridPayload payload) {
         return Texts.utf8(decrypt(privateKeyHex, payload));
     }
 
+    /**
+     * 解密混合加密载荷并按指定字符集返回明文。
+     *
+     * @param privateKeyHex SM2 私钥十六进制字符串
+     * @param payload       混合加密载荷
+     * @param charset       字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 指定字符集解码后的明文
+     */
     public String decryptToString(String privateKeyHex, SM2Sm4HybridPayload payload, Charset charset) {
         return Texts.text(decrypt(privateKeyHex, payload), charset);
     }

@@ -4,9 +4,9 @@ import java.security.Provider;
 import java.security.SecureRandom;
 
 /**
- * @author mumu
- * @description 国密算法安全上下文，封装加密操作所需的安全组件
- * @since 1.0.0
+ * 国密算法安全上下文。
+ * <p>
+ * 封装 Provider、随机源以及是否自动注册 Provider 等运行时安全配置。
  */
 public final class GmSecurityContext {
 
@@ -21,7 +21,7 @@ public final class GmSecurityContext {
     }
 
     /**
-     * 创建构建器
+     * 创建安全上下文构建器。
      *
      * @return 构建器实例
      */
@@ -30,9 +30,11 @@ public final class GmSecurityContext {
     }
 
     /**
-     * 获取加密提供者
+     * 获取当前安全上下文对应的 Provider。
+     * <p>
+     * 当 {@link #registerProvider()} 为 {@code true} 时，此方法会在返回前确保 Provider 已注册。
      *
-     * @return 加密提供者实例
+     * @return Provider 实例
      */
     public Provider provider() {
         if (!registerProvider) {
@@ -42,25 +44,25 @@ public final class GmSecurityContext {
     }
 
     /**
-     * 获取安全随机数生成器
+     * 获取安全随机数生成器。
      *
-     * @return SecureRandom实例
+     * @return SecureRandom 实例
      */
     public SecureRandom secureRandom() {
         return secureRandom;
     }
 
     /**
-     * 是否注册Provider
+     * 是否在访问 Provider 时自动注册。
      *
-     * @return 如果需要注册返回true，否则返回false
+     * @return 需要自动注册时返回 {@code true}
      */
     public boolean registerProvider() {
         return registerProvider;
     }
 
     /**
-     * 安全上下文构建器
+     * 安全上下文构建器。
      */
     public static final class Builder {
         private Provider provider;
@@ -71,10 +73,10 @@ public final class GmSecurityContext {
         }
 
         /**
-         * 设置加密提供者
+         * 设置加密 Provider。
          *
-         * @param provider 加密提供者
-         * @return 构建器实例
+         * @param provider Provider 实例；传入 {@code null} 时在构建时回退为默认 BC Provider
+         * @return 当前构建器
          */
         public Builder provider(Provider provider) {
             this.provider = provider;
@@ -82,10 +84,10 @@ public final class GmSecurityContext {
         }
 
         /**
-         * 设置安全随机数生成器
+         * 设置安全随机数生成器。
          *
-         * @param secureRandom 安全随机数生成器
-         * @return 构建器实例
+         * @param secureRandom SecureRandom 实例；传入 {@code null} 时在构建时创建默认实例
+         * @return 当前构建器
          */
         public Builder secureRandom(SecureRandom secureRandom) {
             this.secureRandom = secureRandom;
@@ -93,10 +95,10 @@ public final class GmSecurityContext {
         }
 
         /**
-         * 设置是否注册Provider
+         * 设置是否自动注册 Provider。
          *
-         * @param registerProvider 是否注册Provider
-         * @return 构建器实例
+         * @param registerProvider 为 {@code true} 时在调用 {@link GmSecurityContext#provider()} 时自动注册
+         * @return 当前构建器
          */
         public Builder registerProvider(boolean registerProvider) {
             this.registerProvider = registerProvider;
@@ -104,13 +106,12 @@ public final class GmSecurityContext {
         }
 
         /**
-         * 构建安全上下文对象
+         * 构建不可变的安全上下文对象。
          *
-         * @return 安全上下文实例
+         * @return 安全上下文
          */
         public GmSecurityContext build() {
             return new GmSecurityContext(this);
         }
     }
 }
-

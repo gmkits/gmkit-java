@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description 输入格式枚举，指定输入数据的编码方式
- * @since 1.0.0
+ * 输入字符串的编码格式。
  */
 public enum InputFormat {
     /**
@@ -15,5 +13,4 @@ public enum InputFormat {
      */
     BASE64
 }
-
 

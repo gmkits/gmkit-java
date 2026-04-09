@@ -178,7 +178,7 @@ class SM2UtilTest {
             message,
             withZSignature,
             SM2VerifyOptions.builder()
-                .userId(SM2Util.LEGACY_USER_ID)
+                .userId(SM2Util.DEFAULT_USER_ID)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
         assertFalse(SM2Util.verifyWithoutZ(publicKey, message, withZSignature, SM2SignatureInputFormat.RAW));
@@ -188,7 +188,7 @@ class SM2UtilTest {
             message,
             directESignature,
             SM2VerifyOptions.builder()
-                .userId(SM2Util.LEGACY_USER_ID)
+                .userId(SM2Util.DEFAULT_USER_ID)
                 .signatureFormat(SM2SignatureInputFormat.RAW)
                 .build()));
         assertFalse(SM2Util.verifyWithoutZ(publicKey, message, directESignature, SM2SignatureInputFormat.RAW));
@@ -260,7 +260,7 @@ class SM2UtilTest {
     }
 
     @Test
-    void utilAliasShouldRemainUsable() {
+    void utilEntryPointShouldRemainUsable() {
         SM2KeyPair keyPair = SM2Util.generateKeyPair(false);
         byte[] message = Texts.utf8("compat-api");
 
@@ -269,16 +269,5 @@ class SM2UtilTest {
 
         assertArrayEquals(message, SM2Util.decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2));
         assertTrue(SM2Util.verifyWithoutZ(keyPair.publicKey(), message, signature, SM2SignatureInputFormat.RAW));
-    }
-
-    @Test
-    void gmkitxStyleAliasesShouldRoundTripCommonFlow() {
-        SM2KeyPair keyPair = SM2Util.sm2GenerateKeyPair(false);
-        byte[] message = Texts.utf8("gmkitx-sm2-alias");
-        byte[] ciphertext = SM2Util.sm2Encrypt(keyPair.publicKey(), message, SM2CipherMode.C1C3C2);
-        byte[] signature = SM2Util.sm2Sign(keyPair.privateKey(), message);
-
-        assertArrayEquals(message, SM2Util.sm2Decrypt(keyPair.privateKey(), ciphertext, SM2CipherMode.C1C3C2));
-        assertTrue(SM2Util.sm2Verify(keyPair.publicKey(), message, signature));
     }
 }

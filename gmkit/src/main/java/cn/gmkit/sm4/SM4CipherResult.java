@@ -6,9 +6,9 @@ import cn.gmkit.core.Checks;
 import cn.gmkit.core.HexCodec;
 
 /**
- * @author mumu
- * @description SM4加密结果封装类
- * @since 1.0.0
+ * SM4 加密结果。
+ * <p>
+ * 同时封装密文主体以及可选的 AEAD 认证标签。
  */
 public final class SM4CipherResult {
 
@@ -16,7 +16,7 @@ public final class SM4CipherResult {
     private final byte[] tag;
 
     /**
-     * 构造SM4加密结果对象
+     * 创建一个 SM4 加密结果对象。
      *
      * @param ciphertext 密文数据
      * @param tag        认证标签（用于AEAD模式如GCM、CCM）
@@ -27,9 +27,9 @@ public final class SM4CipherResult {
     }
 
     /**
-     * 获取密文数据
+     * 获取密文数据。
      *
-     * @return 密文字节数组的克隆
+     * @return 密文字节数组的防御性拷贝
      */
     public byte[] ciphertext() {
         return Bytes.clone(ciphertext);
@@ -40,9 +40,9 @@ public final class SM4CipherResult {
     }
 
     /**
-     * 获取认证标签
+     * 获取认证标签。
      *
-     * @return 认证标签字节数组的克隆
+     * @return 认证标签字节数组的防御性拷贝
      */
     public byte[] tag() {
         return Bytes.clone(tag);
@@ -53,50 +53,49 @@ public final class SM4CipherResult {
     }
 
     /**
-     * 判断是否包含认证标签
+     * 判断是否包含认证标签。
      *
-     * @return 如果包含认证标签返回true，否则返回false
+     * @return 包含认证标签时返回 {@code true}
      */
     public boolean hasTag() {
         return Checks.hasBytes(tag);
     }
 
     /**
-     * 获取密文的十六进制字符串
+     * 获取密文的十六进制字符串。
      *
-     * @return 密文的十六进制表示
+     * @return 十六进制密文
      */
     public String ciphertextHex() {
         return HexCodec.encode(ciphertext);
     }
 
     /**
-     * 获取密文的Base64字符串
+     * 获取密文的 Base64 字符串。
      *
-     * @return 密文的Base64表示
+     * @return Base64 密文
      */
     public String ciphertextBase64() {
         return Base64Codec.encode(ciphertext);
     }
 
     /**
-     * 获取认证标签的十六进制字符串
+     * 获取认证标签的十六进制字符串。
      *
-     * @return 认证标签的十六进制表示，如果不存在则返回null
+     * @return 十六进制认证标签；不存在时返回 {@code null}
      */
     public String tagHex() {
         return hasTag() ? HexCodec.encode(tag) : null;
     }
 
     /**
-     * 获取认证标签的Base64字符串
+     * 获取认证标签的 Base64 字符串。
      *
-     * @return 认证标签的Base64表示，如果不存在则返回null
+     * @return Base64 认证标签；不存在时返回 {@code null}
      */
     public String tagBase64() {
         return hasTag() ? Base64Codec.encode(tag) : null;
     }
 }
-
 
 

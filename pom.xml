@@ -39,6 +39,7 @@
 
     <modules>
         <module>gmkit</module>
+        <module>gmkit-benchmarks</module>
     </modules>
 
     <properties>
@@ -48,11 +49,14 @@
         <maven.compiler.parameters>true</maven.compiler.parameters>
         <bouncycastle.version>1.83</bouncycastle.version>
         <junit.version>5.10.2</junit.version>
+        <jmh.version>1.37</jmh.version>
+        <lombok.version>1.18.38</lombok.version>
         <maven.enforcer.version>3.5.0</maven.enforcer.version>
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
         <maven.surefire.plugin.version>3.2.5</maven.surefire.plugin.version>
         <maven.source.plugin.version>3.3.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.7.0</maven.javadoc.plugin.version>
+        <maven.shade.plugin.version>3.5.3</maven.shade.plugin.version>
         <maven.gpg.plugin.version>3.2.7</maven.gpg.plugin.version>
         <maven.deploy.plugin.version>3.1.3</maven.deploy.plugin.version>
         <animal.sniffer.version>1.24</animal.sniffer.version>

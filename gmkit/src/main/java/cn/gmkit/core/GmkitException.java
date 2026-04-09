@@ -8,12 +8,22 @@ package cn.gmkit.core;
  */
 public class GmkitException extends RuntimeException {
 
+    /**
+     * 使用错误消息创建异常。
+     *
+     * @param message 错误消息
+     */
     public GmkitException(String message) {
         super(message);
     }
 
+    /**
+     * 使用错误消息和根因创建异常。
+     *
+     * @param message 错误消息
+     * @param cause   根因异常
+     */
     public GmkitException(String message, Throwable cause) {
         super(message, cause);
     }
 }
-

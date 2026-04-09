@@ -1,18 +1,24 @@
 package cn.gmkit.sm2;
 
 import cn.gmkit.core.Bytes;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.experimental.Accessors;
 
 /**
- * @author mumu
- * @description SM2密钥交换选项配置类
- * @since 1.0.0
+ * SM2 密钥交换选项。
+ * <p>
+ * 用于控制协商角色、输出密钥位数、双方用户标识以及确认标签。
  */
+@Getter
+@Accessors(fluent = true)
 public final class SM2KeyExchangeOptions {
 
     private final boolean initiator;
     private final int keyBits;
     private final String selfId;
     private final String peerId;
+    @Getter(AccessLevel.NONE)
     private final byte[] confirmationTag;
 
     private SM2KeyExchangeOptions(Builder builder) {
@@ -33,52 +39,16 @@ public final class SM2KeyExchangeOptions {
     }
 
     /**
-     * 是否为密钥交换发起方
+     * 获取对端确认标签。
      *
-     * @return 如果是发起方返回true，否则返回false
-     */
-    public boolean initiator() {
-        return initiator;
-    }
-
-    /**
-     * 获取密钥位数
-     *
-     * @return 密钥位数
-     */
-    public int keyBits() {
-        return keyBits;
-    }
-
-    /**
-     * 获取己方ID
-     *
-     * @return 己方ID
-     */
-    public String selfId() {
-        return selfId;
-    }
-
-    /**
-     * 获取对方ID
-     *
-     * @return 对方ID
-     */
-    public String peerId() {
-        return peerId;
-    }
-
-    /**
-     * 获取确认标签
-     *
-     * @return 确认标签的字节数组克隆
+     * @return 确认标签的防御性拷贝；未设置时返回 {@code null}
      */
     public byte[] confirmationTag() {
         return Bytes.clone(confirmationTag);
     }
 
     /**
-     * SM2密钥交换选项构建器
+     * SM2 密钥交换选项构建器。
      */
     public static final class Builder {
         private boolean initiator;
@@ -91,10 +61,10 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 设置是否为发起方
+         * 设置是否为发起方。
          *
-         * @param initiator 是否为发起方
-         * @return 构建器实例
+         * @param initiator 为 {@code true} 时表示当前一方是协商发起者
+         * @return 当前构建器
          */
         public Builder initiator(boolean initiator) {
             this.initiator = initiator;
@@ -102,10 +72,10 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 设置密钥位数
+         * 设置输出密钥位数。
          *
-         * @param keyBits 密钥位数
-         * @return 构建器实例
+         * @param keyBits 输出密钥位数
+         * @return 当前构建器
          */
         public Builder keyBits(int keyBits) {
             this.keyBits = keyBits;
@@ -113,10 +83,10 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 设置己方ID
+         * 设置己方用户标识。
          *
-         * @param selfId 己方ID
-         * @return 构建器实例
+         * @param selfId 己方用户标识；传入 {@code null} 时回退为默认用户标识
+         * @return 当前构建器
          */
         public Builder selfId(String selfId) {
             this.selfId = cn.gmkit.core.Checks.defaultIfNull(selfId, SM2.DEFAULT_USER_ID);
@@ -124,10 +94,10 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 设置对方ID
+         * 设置对方用户标识。
          *
-         * @param peerId 对方ID
-         * @return 构建器实例
+         * @param peerId 对方用户标识；传入 {@code null} 时回退为默认用户标识
+         * @return 当前构建器
          */
         public Builder peerId(String peerId) {
             this.peerId = cn.gmkit.core.Checks.defaultIfNull(peerId, SM2.DEFAULT_USER_ID);
@@ -135,10 +105,10 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 设置确认标签
+         * 设置对端确认标签。
          *
-         * @param confirmationTag 确认标签字节数组
-         * @return 构建器实例
+         * @param confirmationTag 对端确认标签
+         * @return 当前构建器
          */
         public Builder confirmationTag(byte[] confirmationTag) {
             this.confirmationTag = Bytes.clone(confirmationTag);
@@ -146,13 +116,12 @@ public final class SM2KeyExchangeOptions {
         }
 
         /**
-         * 构建密钥交换选项对象
+         * 构建不可变的密钥交换选项对象。
          *
-         * @return 密钥交换选项实例
+         * @return SM2 密钥交换选项
          */
         public SM2KeyExchangeOptions build() {
             return new SM2KeyExchangeOptions(this);
         }
     }
 }
-

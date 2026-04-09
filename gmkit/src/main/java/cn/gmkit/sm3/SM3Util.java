@@ -11,52 +11,13 @@ import java.nio.charset.Charset;
  */
 public final class SM3Util {
 
+    /**
+     * SM3 摘要长度，单位为字节。
+     */
     public static final int DIGEST_LENGTH = SM3.DIGEST_LENGTH;
     private static final SM3 DEFAULT = new SM3();
 
     private SM3Util() {
-    }
-
-    /**
-     * mumu 2026-03-30：对齐 gmkitx 的前缀式摘要入口。
-     *
-     * @param data 输入数据，不能为 {@code null}
-     * @return 32 字节摘要
-     */
-    public static byte[] sm3Digest(byte[] data) {
-        return digest(data);
-    }
-
-    /**
-     * mumu 2026-03-30：对齐 gmkitx 的前缀式摘要入口。
-     *
-     * @param data 输入字符串
-     * @return 32 字节摘要
-     */
-    public static byte[] sm3Digest(String data) {
-        return digest(data);
-    }
-
-    /**
-     * mumu 2026-03-30：对齐 gmkitx 的前缀式 HMAC 入口。
-     *
-     * @param key  HMAC 密钥
-     * @param data 输入字节数组
-     * @return HMAC 结果
-     */
-    public static byte[] sm3Hmac(byte[] key, byte[] data) {
-        return hmac(key, data);
-    }
-
-    /**
-     * mumu 2026-03-30：对齐 gmkitx 的前缀式 HMAC 入口。
-     *
-     * @param key  HMAC 密钥
-     * @param data 输入字符串
-     * @return HMAC 结果
-     */
-    public static byte[] sm3Hmac(byte[] key, String data) {
-        return hmac(key, data);
     }
 
     /**
@@ -69,70 +30,187 @@ public final class SM3Util {
         return SM3Support.digest(data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 SM3 摘要。
+     *
+     * @param data 输入字符串
+     * @return 32 字节摘要
+     */
     public static byte[] digest(String data) {
         return DEFAULT.digest(data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 SM3 摘要。
+     *
+     * @param data    输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 32 字节摘要
+     */
     public static byte[] digest(String data, Charset charset) {
         return DEFAULT.digest(data, charset);
     }
 
+    /**
+     * 计算字节数组的 SM3 摘要并输出十六进制字符串。
+     *
+     * @param data 输入字节数组
+     * @return 十六进制摘要
+     */
     public static String digestHex(byte[] data) {
         return DEFAULT.digestHex(data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 SM3 摘要并输出十六进制字符串。
+     *
+     * @param data 输入字符串
+     * @return 十六进制摘要
+     */
     public static String digestHex(String data) {
         return DEFAULT.digestHex(data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 SM3 摘要并输出十六进制字符串。
+     *
+     * @param data 输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 十六进制摘要
+     */
     public static String digestHex(String data, Charset charset) {
         return DEFAULT.digestHex(data, charset);
     }
 
+    /**
+     * 计算字节数组的 SM3 摘要并输出 Base64 字符串。
+     *
+     * @param data 输入字节数组
+     * @return Base64 摘要
+     */
     public static String digestBase64(byte[] data) {
         return DEFAULT.digestBase64(data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 SM3 摘要并输出 Base64 字符串。
+     *
+     * @param data 输入字符串
+     * @return Base64 摘要
+     */
     public static String digestBase64(String data) {
         return DEFAULT.digestBase64(data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 SM3 摘要并输出 Base64 字符串。
+     *
+     * @param data 输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return Base64 摘要
+     */
     public static String digestBase64(String data, Charset charset) {
         return DEFAULT.digestBase64(data, charset);
     }
 
+    /**
+     * 计算 HMAC-SM3。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字节数组
+     * @return 32 字节 HMAC 结果
+     */
     public static byte[] hmac(byte[] key, byte[] data) {
         return SM3Support.hmac(key, data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 HMAC-SM3。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @return 32 字节 HMAC 结果
+     */
     public static byte[] hmac(byte[] key, String data) {
         return DEFAULT.hmac(key, data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 HMAC-SM3。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 32 字节 HMAC 结果
+     */
     public static byte[] hmac(byte[] key, String data, Charset charset) {
         return DEFAULT.hmac(key, data, charset);
     }
 
+    /**
+     * 计算 HMAC-SM3 并输出十六进制字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字节数组
+     * @return 十六进制 HMAC
+     */
     public static String hmacHex(byte[] key, byte[] data) {
         return DEFAULT.hmacHex(key, data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 HMAC-SM3 并输出十六进制字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @return 十六进制 HMAC
+     */
     public static String hmacHex(byte[] key, String data) {
         return DEFAULT.hmacHex(key, data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 HMAC-SM3 并输出十六进制字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return 十六进制 HMAC
+     */
     public static String hmacHex(byte[] key, String data, Charset charset) {
         return DEFAULT.hmacHex(key, data, charset);
     }
 
+    /**
+     * 计算 HMAC-SM3 并输出 Base64 字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字节数组
+     * @return Base64 HMAC
+     */
     public static String hmacBase64(byte[] key, byte[] data) {
         return DEFAULT.hmacBase64(key, data);
     }
 
+    /**
+     * 计算 UTF-8 字符串的 HMAC-SM3 并输出 Base64 字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @return Base64 HMAC
+     */
     public static String hmacBase64(byte[] key, String data) {
         return DEFAULT.hmacBase64(key, data);
     }
 
+    /**
+     * 使用指定字符集计算字符串的 HMAC-SM3 并输出 Base64 字符串。
+     *
+     * @param key HMAC 密钥
+     * @param data 输入字符串
+     * @param charset 字符集；传入 {@code null} 时默认使用 UTF-8
+     * @return Base64 HMAC
+     */
     public static String hmacBase64(byte[] key, String data, Charset charset) {
         return DEFAULT.hmacBase64(key, data, charset);
     }

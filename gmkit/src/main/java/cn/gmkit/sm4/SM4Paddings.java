@@ -19,7 +19,7 @@ final class SM4Paddings {
             return source;
         }
         if (padding == SM4Padding.ZERO) {
-            if (source.length == 0 || source.length % SM4Support.BLOCK_SIZE == 0) {
+            if (source.length % SM4Support.BLOCK_SIZE == 0) {
                 return source;
             }
             byte[] padded = new byte[((source.length / SM4Support.BLOCK_SIZE) + 1) * SM4Support.BLOCK_SIZE];

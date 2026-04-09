@@ -11,9 +11,9 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 /**
- * @author mumu
- * @description SM2密文格式转换工具类
- * @since 1.0.0
+ * SM2 密文编码转换工具。
+ * <p>
+ * 负责在原始 C1/C2/C3 布局、GmSSL 兼容布局以及 ASN.1 DER 编码之间做转换。
  */
 public final class SM2Ciphertexts {
 
@@ -239,4 +239,3 @@ public final class SM2Ciphertexts {
         }
     }
 }
-

@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description SM4加密算法的工作模式枚举
- * @since 1.0.0
+ * SM4 工作模式。
  */
 public enum SM4CipherMode {
     /**
@@ -36,14 +34,13 @@ public enum SM4CipherMode {
     CCM;
 
     /**
-     * 判断是否为流式加密模式
+     * 判断当前模式是否表现为流式模式。
      *
-     * @return 如果是流式加密模式返回true，否则返回false
+     * @return 流式模式返回 {@code true}
      */
     public boolean isStreamLike() {
         return this == CTR || this == CFB || this == OFB || this == GCM || this == CCM;
     }
 }
-
 
 

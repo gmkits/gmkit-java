@@ -52,6 +52,21 @@ public final class Checks {
     }
 
     /**
+     * 要求字节数组非空且至少包含一个字节。
+     *
+     * @param value 待检查数组
+     * @param label 错误标签
+     * @return 原数组
+     */
+    public static byte[] requireNonEmpty(byte[] value, String label) {
+        requireNonNull(value, label);
+        if (value.length == 0) {
+            throw new GmkitException(Messages.emptyValue(label));
+        }
+        return value;
+    }
+
+    /**
      * 判断字节数组是否有内容。
      *
      * @param value 待检查数组

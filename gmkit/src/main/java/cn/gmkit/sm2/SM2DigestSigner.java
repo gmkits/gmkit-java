@@ -14,9 +14,9 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 /**
- * @author mumu
- * @description SM2数字签名算法实现类（内部使用）
- * @since 1.0.0
+ * SM2 摘要签名器。
+ * <p>
+ * 该类型仅供库内部复用，用于基于 e 值执行签名与验签。
  */
 final class SM2DigestSigner implements ECConstants {
 
@@ -123,5 +123,4 @@ final class SM2DigestSigner implements ECConstants {
         return expected.equals(r);
     }
 }
-
 

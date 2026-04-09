@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description SM2 签名输入格式枚举
- * @since 1.0.0
+ * SM2 签名输入格式。
  */
 public enum SM2SignatureInputFormat {
     /**
@@ -19,5 +17,4 @@ public enum SM2SignatureInputFormat {
      */
     AUTO
 }
-
 

@@ -19,14 +19,12 @@ import java.nio.charset.Charset;
 public final class SM2 {
 
     /**
-     * 默认用户标识，兼容历史实现。
+     * 默认用户标识。
+     * <p>
+     * 当前库默认按公开资料里最常见的 16 字节用户标识处理，
+     * 便于与大多数 SM2 示例、测试向量和历史系统保持一致。
      */
     public static final String DEFAULT_USER_ID = "1234567812345678";
-
-    /**
-     * 历史版本默认用户标识别名。
-     */
-    public static final String LEGACY_USER_ID = DEFAULT_USER_ID;
 
     /**
      * 2023 版规范下可选的空用户标识。
@@ -413,10 +411,27 @@ public final class SM2 {
         return SM2SignerSupport.signHex(privateKeyHex, message, resolveSignOptions(options));
     }
 
+    /**
+     * 对 UTF-8 文本签名并输出十六进制结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param options       签名参数
+     * @return 十六进制签名
+     */
     public String signHex(String privateKeyHex, String message, SM2SignOptions options) {
         return signHex(privateKeyHex, message, Texts.UTF_8, options);
     }
 
+    /**
+     * 对指定字符集编码后的文本签名并输出十六进制结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param charset       字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param options       签名参数
+     * @return 十六进制签名
+     */
     public String signHex(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
         return signHex(privateKeyHex, Texts.bytes(message, charset), options);
     }
@@ -433,10 +448,27 @@ public final class SM2 {
         return SM2SignerSupport.signBase64(privateKeyHex, message, resolveSignOptions(options));
     }
 
+    /**
+     * 对 UTF-8 文本签名并输出 Base64 结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param options       签名参数
+     * @return Base64 签名
+     */
     public String signBase64(String privateKeyHex, String message, SM2SignOptions options) {
         return signBase64(privateKeyHex, message, Texts.UTF_8, options);
     }
 
+    /**
+     * 对指定字符集编码后的文本签名并输出 Base64 结果。
+     *
+     * @param privateKeyHex 私钥十六进制字符串
+     * @param message       原文消息
+     * @param charset       字符集；传入 {@code null} 时默认使用 UTF-8
+     * @param options       签名参数
+     * @return Base64 签名
+     */
     public String signBase64(String privateKeyHex, String message, Charset charset, SM2SignOptions options) {
         return signBase64(privateKeyHex, Texts.bytes(message, charset), options);
     }

@@ -1,9 +1,7 @@
 package cn.gmkit.core;
 
 /**
- * @author mumu
- * @description SM2 签名输出格式枚举
- * @since 1.0.0
+ * SM2 签名输出格式。
  */
 public enum SM2SignatureFormat {
     /**
@@ -15,6 +13,5 @@ public enum SM2SignatureFormat {
      */
     DER
 }
-
 
 

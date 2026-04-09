@@ -2,6 +2,7 @@ package cn.gmkit.sm2;
 
 import cn.gmkit.core.Checks;
 import cn.gmkit.core.GmkitException;
+import cn.gmkit.core.Messages;
 import cn.gmkit.core.SM2SignatureFormat;
 import cn.gmkit.core.SM2SignatureInputFormat;
 import org.bouncycastle.crypto.signers.PlainDSAEncoding;
@@ -10,9 +11,9 @@ import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 import java.io.IOException;
 
 /**
- * @author mumu
- * @description SM2签名格式转换工具类
- * @since 1.0.0
+ * SM2 签名编码转换工具。
+ * <p>
+ * 提供 RAW 与 ASN.1 DER 两种常见签名格式之间的转换和自动识别。
  */
 public final class SM2Signatures {
 
@@ -20,11 +21,11 @@ public final class SM2Signatures {
     }
 
     /**
-     * 将签名规范化为请求的格式
+     * 将 DER 签名规范化为请求的输出格式。
      *
-     * @param signature 原始签名
-     * @param format    目标格式
-     * @return 规范化后的签名
+     * @param signature DER 编码签名
+     * @param format 目标输出格式；传入 {@code null} 时默认按 RAW 处理
+     * @return 目标格式的签名
      */
     public static byte[] normalizeToRequested(byte[] signature, SM2SignatureFormat format) {
         if (format == SM2SignatureFormat.DER) {
@@ -34,12 +35,12 @@ public final class SM2Signatures {
     }
 
     /**
-     * 将签名规范化为DER格式
+     * 将输入签名规范化为 ASN.1 DER 格式。
      *
-     * @param signature   原始签名
-     * @param inputFormat 输入格式
-     * @return DER格式的签名
-     * @throws GmkitException 如果转换失败
+     * @param signature 原始签名
+     * @param inputFormat 输入格式；传入 {@code AUTO} 时自动识别 RAW 与 DER
+     * @return DER 编码签名
+     * @throws GmkitException 当签名既不是合法 RAW 也不是合法 DER 时抛出
      */
     public static byte[] normalizeToDer(byte[] signature, SM2SignatureInputFormat inputFormat) {
         if (inputFormat == SM2SignatureInputFormat.DER) {
@@ -55,42 +56,42 @@ public final class SM2Signatures {
         if (looksLikeDerSignature(signature)) {
             return signature;
         }
-        throw new GmkitException("Invalid SM2 signature: expected 64-byte RAW (r||s) or ASN.1 DER sequence");
+        throw new GmkitException(Messages.invalidSm2Signature());
     }
 
     /**
-     * 将DER格式的签名转换为原始格式
+     * 将 ASN.1 DER 签名转换为 RAW 格式。
      *
-     * @param derSignature DER格式的签名
-     * @return 原始格式的签名（64字节R+S）
-     * @throws GmkitException 如果转换失败
+     * @param derSignature DER 编码签名
+     * @return 64 字节的 RAW 签名（r||s）
+     * @throws GmkitException 当输入不是合法 DER 签名时抛出
      */
     public static byte[] derToRaw(byte[] derSignature) {
         try {
             java.math.BigInteger[] rs = StandardDSAEncoding.INSTANCE.decode(SM2Domain.DOMAIN_PARAMS.getN(), derSignature);
             return PlainDSAEncoding.INSTANCE.encode(SM2Domain.DOMAIN_PARAMS.getN(), rs[0], rs[1]);
         } catch (IOException ex) {
-            throw new GmkitException("Invalid SM2 signature ASN.1 DER encoding: expected SEQUENCE { r, s }", ex);
+            throw new GmkitException(Messages.invalidSm2DerSignature(), ex);
         }
     }
 
     /**
-     * 将原始格式的签名转换为DER格式
+     * 将 RAW 签名转换为 ASN.1 DER 格式。
      *
-     * @param rawSignature 原始格式的签名（64字节R+S）
-     * @return DER格式的签名
-     * @throws GmkitException 如果转换失败
+     * @param rawSignature 64 字节的 RAW 签名（r||s）
+     * @return DER 编码签名
+     * @throws GmkitException 当输入不是 64 字节 RAW 签名时抛出
      */
     public static byte[] rawToDer(byte[] rawSignature) {
-        Checks.requireNonNull(rawSignature, "Invalid SM2 RAW signature");
+        Checks.requireNonNull(rawSignature, "SM2 RAW signature");
         if (rawSignature.length != SM2Domain.RAW_SIGNATURE_LENGTH) {
-            throw new GmkitException("Invalid SM2 RAW signature: expected " + SM2Domain.RAW_SIGNATURE_LENGTH + " bytes (r||s)");
+            throw new GmkitException(Messages.invalidSm2RawSignatureLength(SM2Domain.RAW_SIGNATURE_LENGTH));
         }
         try {
             java.math.BigInteger[] rs = PlainDSAEncoding.INSTANCE.decode(SM2Domain.DOMAIN_PARAMS.getN(), rawSignature);
             return StandardDSAEncoding.INSTANCE.encode(SM2Domain.DOMAIN_PARAMS.getN(), rs[0], rs[1]);
         } catch (IOException ex) {
-            throw new GmkitException("Invalid SM2 RAW signature: unable to encode ASN.1 DER sequence", ex);
+            throw new GmkitException(Messages.invalidSm2RawSignatureEncoding(), ex);
         }
     }
 
@@ -100,4 +101,3 @@ public final class SM2Signatures {
             && signature[0] == 0x30;
     }
 }
-
